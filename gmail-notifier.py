@@ -75,7 +75,10 @@ class Message(indicate.Indicator):
 		self.show()
 		self.connect("user-display", self.clicked)
 		self.set_property("subtype", "mail")
-		self.set_property("name", "%s - %s" % (title, sender))
+		if sender:
+			self.set_property("name", "%s - %s" % (title, sender))
+		else:
+			self.set_property("name", "%s" % title)
 		self.set_property_time("time", self.time)
 		self.alert()
 		self.last = 0
@@ -103,7 +106,7 @@ class Notifier:
 		self.error = pynotify.Notification("Gmail Notifier", "Unable to connect.")
 		self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
 		self.req.add_header("Authorization", "Basic %s" % (base64.encodestring("%s:%s" % (username, password))[:-1]))
-		self.messages.append(Message("Initial check in 30s.", "d(^.^d)", time.time(), "http://ahadiel.org"))
+		self.messages.append(Message("Initial check in 30s", None, time.time(), "http://ahadiel.org"))
 		gobject.timeout_add_seconds(30, self.checkMail)
 
 	def clicked(self, server):
