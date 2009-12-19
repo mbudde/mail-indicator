@@ -78,7 +78,9 @@ def getText(name, description, hidden=False):
 class Account(indicate.Indicator):
 
 	__gsignals__ = {
-		'new-mail': (gobject.SIGNAL_ACTION, None, (int,)),
+		"new-mail": (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+		            (gobject.TYPE_INT,)),
+		"auth-error": (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
 	}
 
 	def __init__(self):
@@ -114,9 +116,8 @@ class Account(indicate.Indicator):
 		try:
 			atom = feedparser.parse(urllib2.urlopen(self.req).read())
 		except:
-			self.error.show()
-			print "Invalid password. Please rerun with any parameter to re-enter your email/password."
-			print "\tie. python gmail-notifier.py reset"
+			self.emit("auth-error")
+			self.hide()
 			return
 
 		new = 0
@@ -128,7 +129,7 @@ class Account(indicate.Indicator):
 		if new > 0:
 			self.alert()
 			self.show()
-			self.emit('new-mail', new)
+			self.emit("new-mail", new)
 		self.last_check = time.time()
 
 		count = int(atom["feed"]["fullcount"])
@@ -150,6 +151,8 @@ class Account(indicate.Indicator):
 		self.lower()
 		self.hide()
 
+gobject.type_register(Account)
+
 
 class Notifier:
 	def __init__(self, accounts):
@@ -159,14 +162,14 @@ class Notifier:
 		self.server.connect("server-display", self.clicked)
 		self.server.show()
 		self.messages = []
-		pynotify.init("icon-summary-body")
-		self.error = pynotify.Notification("Gmail Notifier", "Unable to connect.")
 		self.first_check = True
+		pynotify.init("GmailNotifier")
 
 		for acc in accounts:
 			debug("Account: %s, enabled: %s" % (acc.email, acc.enabled))
 			if acc.enabled:
 				acc.connect("new-mail", self.notify)
+				acc.connect("auth-error", self.notify_error)
 				gobject.timeout_add_seconds(30, acc.check_mail)
 
 	def clicked(self, server):
@@ -176,9 +179,14 @@ class Notifier:
 	def notify(self, acc, count):
 		str = "You have %d %s mail%s." % (count, self.first_check and "unread"
 		                                  or "new", count == 1 and "" or "s")
-		notification = pynotify.Notification("Gmail Notifier - %s" % acc.email, str)
-		notification.show()
+		n = pynotify.Notification("Gmail Notifier - %s" % acc.email, str)
+		n.show()
 		self.first_check = False
+
+	def notify_error(self, acc):
+		n = pynotify.Notification("Gmail Notifier - %s" % acc.email,
+		                          "Unable to connect. Email or password may be wrong.")
+		n.show()
 
 	def destroy(self):
 		self.server.hide()
