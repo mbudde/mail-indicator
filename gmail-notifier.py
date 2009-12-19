@@ -121,6 +121,8 @@ class Notifier:
 			print "\tie. python gmail-notifier.py reset"
 			return
 
+		count = int(atom["feed"]["fullcount"])
+		self.server.set_property("count", count);
 		new = False
 		for email in atom["entries"][::-1]:
 			if(email["title"] in [message.title for message in self.messages]):
