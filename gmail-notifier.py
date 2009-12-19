@@ -45,9 +45,13 @@ import calendar
 import gconf
 import gnomekeyring
 
+DEBUG = False
 
 GCONF_PATH = "/apps/gmail-notifier"
 
+def debug(str):
+	if DEBUG:
+		print str
 
 def responseToDialog(entry, dialog, response):
 	dialog.response(response)
@@ -85,6 +89,7 @@ class Account(indicate.Indicator):
 		self.enabled = True
 		self.count = 0
 		self.link = None
+		self.last_check = None
 		self.connect("user-display", self.clicked)
 		self.set_property("subtype", "mail")
 		self.req = None
@@ -99,12 +104,13 @@ class Account(indicate.Indicator):
 			self.set_property("name", val)
 
 	def check_mail(self):
+		debug("Check for new mail on %s" % self.email)
 		if not self.req:
 			if not self.email or not self.password:
 				raise ValueError("missing username or password")
 			self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
 			self.req.add_header("Authorization", "Basic %s"
-								% (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
+			                    % (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
 		try:
 			atom = feedparser.parse(urllib2.urlopen(self.req).read())
 		except:
@@ -113,16 +119,23 @@ class Account(indicate.Indicator):
 			print "\tie. python gmail-notifier.py reset"
 			return
 
-		count = int(atom["feed"]["fullcount"])
-		self.set_property("count", str(count));
-		if count > self.count:
+		new = 0
+		for email in atom["entries"]:
+			utctime = calendar.timegm(time.strptime(email["issued"], "%Y-%m-%dT%H:%M:%SZ"))
+			if not self.last_check or utctime > self.last_check:
+				new += 1
+		debug("%d new mails" % new)
+		if new > 0:
 			self.alert()
 			self.show()
-			self.emit('new-mail', count-self.count)
-		self.count = count
+			self.emit('new-mail', new)
+		self.last_check = time.time()
 
-		self.link = atom["feed"]["links"][0]["href"]
-		
+		count = int(atom["feed"]["fullcount"])
+		self.set_property("count", str(count));
+
+		self.link = atom["feed"]["links"][0]["href"] 
+		debug("Checking again in %d seconds" % self.interval)
 		gobject.timeout_add_seconds(self.interval, self.check_mail)
 
 	def alert(self):
@@ -148,21 +161,27 @@ class Notifier:
 		self.messages = []
 		pynotify.init("icon-summary-body")
 		self.error = pynotify.Notification("Gmail Notifier", "Unable to connect.")
+		self.first_check = True
 
 		for acc in accounts:
-			acc.connect("new-mail", self.notify)
-			gobject.timeout_add_seconds(5, acc.check_mail)
+			debug("Account: %s, enabled: %s" % (acc.email, acc.enabled))
+			if acc.enabled:
+				acc.connect("new-mail", self.notify)
+				gobject.timeout_add_seconds(30, acc.check_mail)
 
 	def clicked(self, server):
 		# TODO: open config dialog
 		pass
 
 	def notify(self, acc, count):
-		if count == 1:
-			notification = pynotify.Notification("Gmail Notifier", "You have %d new mail." % count)
-		else:
-			notification = pynotify.Notification("Gmail Notifier", "You have %d new mails." % count)
+		str = "You have %d %s mail%s." % (count, self.first_check and "unread"
+		                                  or "new", count == 1 and "" or "s")
+		notification = pynotify.Notification("Gmail Notifier - %s" % acc.email, str)
 		notification.show()
+		self.first_check = False
+
+	def destroy(self):
+		self.server.hide()
 
 
 class Keyring:
@@ -201,7 +220,7 @@ class Config:
 		paths = self.gconf.all_dirs(os.path.join(self.path, "accounts"))
 		accounts = []
 		for path in paths:
-				accounts.append(self.get_account(path))
+			accounts.append(self.get_account(path))
 		return accounts
 
 	def get_account(self, path):
@@ -230,7 +249,9 @@ if __name__ == "__main__" :
 	conf = Config(GCONF_PATH)
 	accounts = conf.get_accounts()
 
-	if len(sys.argv) > 1:
+	if len(sys.argv) > 1 and sys.argv[1] == "debug":
+		DEBUG = True
+	elif len(sys.argv) > 1:
 		for acc in accounts:
 			conf.remove_account(acc)
 		account = Account()
@@ -258,6 +279,9 @@ if __name__ == "__main__" :
 		conf.save_account(account)
 		accounts.append(account)
 	
-	x = Notifier(accounts)
+	notifier = Notifier(accounts)
 	print "Running..."
-	gtk.main()
+	try:
+		gtk.main()
+	except KeyboardInterrupt:
+		notifier.destroy()
