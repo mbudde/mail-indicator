@@ -2,8 +2,9 @@
 #
 # Name: Gmail Notifier
 # Version: 1.5.2
-# Copyright 2009 Michael Tom-Wing
-# Author: Michael Tom-Wing <mtomwing@gmail.com>
+# Copyright (C) 2009 Michael Tom-Wing, Michael Budde
+# Author: Michael Tom-Wing <mtomwing@gmail.com>,
+#         Michael Budde <mbudde@gmail.com>
 # Date: November 29th, 2009
 # URL: http://ahadiel.org/projects/gmail-notifier
 #
@@ -44,6 +45,10 @@ import calendar
 import gconf
 import gnomekeyring
 
+
+GCONF_PATH = "/apps/gmail-notifier"
+
+
 def responseToDialog(entry, dialog, response):
 	dialog.response(response)
 
@@ -65,54 +70,41 @@ def getText(name, description, hidden=False):
 	dialog.destroy()
 	return text
 
-class Message(indicate.Indicator):
-	def __init__(self, title, sender, time, link):
+
+class Account(indicate.Indicator):
+
+	__gsignals__ = {
+		'new-mail': (gobject.SIGNAL_ACTION, None, (int,)),
+	}
+
+	def __init__(self):
 		indicate.Indicator.__init__(self)
-		self.title = title
-		self.sender = sender
-		self.link = link
-		self.time = time
-		self.show()
+		self.email = None
+		self.password = None
+		self.interval = 300
+		self.enabled = True
+		self.count = 0
+		self.link = None
 		self.connect("user-display", self.clicked)
 		self.set_property("subtype", "mail")
-		if sender:
-			self.set_property("name", "%s - %s" % (title, sender))
-		else:
-			self.set_property("name", "%s" % title)
-		self.set_property_time("time", self.time)
-		self.alert()
-		self.last = 0
+		self.req = None
 
-	def alert(self):
-		self.set_property("draw-attention", "true")
+	@property
+	def email(self):
+		return self._email
+	@email.setter
+	def email(self, val):
+		self._email = val
+		if val:
+			self.set_property("name", val)
 
-	def lower(self):
-		self.set_property("draw-attention", "false")
-
-	def clicked(self, indicator):
-		os.popen("gnome-open '%s' &" % (self.link))
-		self.set_property("draw-attention", "false")
-	
-class Notifier:
-	def __init__(self, username, password, check_time):
-		self.server = indicate.indicate_server_ref_default()
-		self.server.set_type("message.mail")
-		self.server.set_desktop_file("/usr/share/applications/gmail-notifier/gmail-notifier.desktop")
-		self.server.connect("server-display", self.clicked)
-		self.messages = []
-		self.check_time = check_time
-		pynotify.init("icon-summary-body")
-		self.notification = pynotify.Notification("Gmail Notifier", "You have mail.")
-		self.error = pynotify.Notification("Gmail Notifier", "Unable to connect.")
-		self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
-		self.req.add_header("Authorization", "Basic %s" % (base64.encodestring("%s:%s" % (username, password))[:-1]))
-		self.messages.append(Message("Initial check in 30s", None, time.time(), "http://ahadiel.org"))
-		gobject.timeout_add_seconds(30, self.checkMail)
-
-	def clicked(self, server):
-		os.popen("gnome-open 'http://gmail.com' &")
-
-	def checkMail(self):
+	def check_mail(self):
+		if not self.req:
+			if not self.email or not self.password:
+				raise ValueError("missing username or password")
+			self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
+			self.req.add_header("Authorization", "Basic %s"
+								% (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
 		try:
 			atom = feedparser.parse(urllib2.urlopen(self.req).read())
 		except:
@@ -122,103 +114,150 @@ class Notifier:
 			return
 
 		count = int(atom["feed"]["fullcount"])
-		self.server.set_property("count", count);
-		new = False
-		for email in atom["entries"][::-1]:
-			if(email["title"] in [message.title for message in self.messages]):
-				# already in self.messages
-				for message in self.messages:
-					if(email["title"] == message.title):
-						message.lower()
-						break
-			else:
-				# not in self.messages
-				self.messages.append(Message(email["title"], email["author_detail"]["name"], time.mktime(time.localtime(calendar.timegm(time.strptime(email["issued"].replace("T24", "T00"), "%Y-%m-%dT%H:%M:%SZ")))), email["link"]))
-				self.messages[-1].alert()
-				new = True
+		self.set_property("count", str(count));
+		if count > self.count:
+			self.alert()
+			self.show()
+			self.emit('new-mail', count-self.count)
+		self.count = count
 
-		if(new):
-			self.notification.show()
+		self.link = atom["feed"]["links"][0]["href"]
+		
+		gobject.timeout_add_seconds(self.interval, self.check_mail)
 
-		to_delete = []
-		for message in self.messages:
-			if(message.title not in [email["title"] for email in atom["entries"]]):
-				# the email is no longer unread
-				# remove it from self.messages
-				to_delete.append(message)
-			else:
-				pass
+	def alert(self):
+		self.set_property("draw-attention", "true")
 
-		for message in to_delete:
-			message.lower()
-			message.hide()
-			self.messages.remove(message)
+	def lower(self):
+		self.set_property("draw-attention", "false")
 
-		#self.server.set_property("count", len(self.messages))
-		gobject.timeout_add_seconds(self.check_time, self.checkMail)
+	def clicked(self, indicator):
+		if self.link:
+			os.popen("gnome-open '%s' &" % (self.link))
+		self.lower()
+		self.hide()
+
+
+class Notifier:
+	def __init__(self, accounts):
+		self.server = indicate.indicate_server_ref_default()
+		self.server.set_type("message.mail")
+		self.server.set_desktop_file("/usr/share/applications/gmail-notifier/gmail-notifier.desktop")
+		self.server.connect("server-display", self.clicked)
+		self.server.show()
+		self.messages = []
+		pynotify.init("icon-summary-body")
+		self.error = pynotify.Notification("Gmail Notifier", "Unable to connect.")
+
+		for acc in accounts:
+			acc.connect("new-mail", self.notify)
+			gobject.timeout_add_seconds(5, acc.check_mail)
+
+	def clicked(self, server):
+		# TODO: open config dialog
+		pass
+
+	def notify(self, acc, count):
+		if count == 1:
+			notification = pynotify.Notification("Gmail Notifier", "You have %d new mail." % count)
+		else:
+			notification = pynotify.Notification("Gmail Notifier", "You have %d new mails." % count)
+		notification.show()
+
 
 class Keyring:
-	def __init__(self, app_name, app_desc1, app_desc2):
+	def __init__(self, app_name, app_desc):
 		self.keyring = gnomekeyring.get_default_keyring_sync()
 		self.app_name = app_name
-		self.app_desc1 = app_desc1
-		self.app_desc2 = app_desc2
+		self.app_desc = app_desc
 
-	def getInfo(self):
-		auth_token = gconf.client_get_default().get_int("/apps/gnome-python-desktop/keyring_auth_token")
+	def get_password(self, auth_token):
+		password = None
 		if auth_token > 0:
 			try:
-				secret = gnomekeyring.item_get_info_sync(self.keyring, auth_token).get_secret()
-			except gnomekeyring.DeniedError:
-				login = None
-				password = None
-				check = None
-				auth_token = 0
-			else:
-				login, password, check = secret.split('\n')
-		else:
-			login = None
-			password = None
-			check = None
+				password = gnomekeyring.item_get_info_sync(self.keyring, auth_token).get_secret()
+			except:
+				pass
+		return password
 
-		return login, password, int(check)
+	def save_password(self, email, password):
+		auth_token = gnomekeyring.item_create_sync(
+			self.keyring,
+			gnomekeyring.ITEM_GENERIC_SECRET,
+			"%s - %s" % (self.app_name, email),
+			dict(appname="%s - %s" % (self.app_name, self.app_desc), email=email),
+			password,
+			True)
+		return auth_token
 
-	def setInfo(self, login, password, check):
-		auth_token = gnomekeyring.item_create_sync(self.keyring, gnomekeyring.ITEM_GENERIC_SECRET, "%s, %s" % (self.app_name, self.app_desc1), dict(appname="%s, %s" % (self.app_name, self.app_desc1)), "\n".join((login, password,str(check))), True)
-		gconf.client_get_default().set_int("/apps/gnome-python-desktop/keyring_auth_token", auth_token)
 
-if(__name__ == "__main__"):
-	gkey = Keyring("Gmail Notifier", "login information", "A simple Gmail Notifier")
-	
-	try:
-		if(len(sys.argv) > 1):
-			raise
-		else:
-			USERNAME, PASSWORD, CHECK_TIME = gkey.getInfo()
-	except:
+class Config:
+	def __init__(self, path):
+		self.gconf = gconf.client_get_default()
+		self.path = path
+		self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
+
+	def get_accounts(self):
+		paths = self.gconf.all_dirs(os.path.join(self.path, "accounts"))
+		accounts = []
+		for path in paths:
+				accounts.append(self.get_account(path))
+		return accounts
+
+	def get_account(self, path):
+		account = Account()
+		account.enabled  = self.gconf.get_bool("%s/enabled" % path)
+		account.email    = self.gconf.get_string("%s/email" % path)
+		account.interval = self.gconf.get_int("%s/interval" % path)
+		auth_token       = self.gconf.get_int("%s/auth_token" % path)
+		account.password = self.keyring.get_password(auth_token)
+		return account
+
+	def save_account(self, account):
+		path = "%s/accounts/%s" % (self.path, account.email)
+		self.gconf.set_bool("%s/enabled" % path, account.enabled)
+		self.gconf.set_string("%s/email" % path, account.email) 
+		self.gconf.set_int("%s/interval" % path, account.interval) 
+		auth_token = self.keyring.save_password(account.email, account.password)
+		self.gconf.set_int("%s/auth_token" % path, auth_token)
+
+	def remove_account(self, account):
+		path = os.path.join(self.path, "accounts", account.email)
+		self.gconf.recursive_unset(path, 0)
+
+
+if __name__ == "__main__" :
+	conf = Config(GCONF_PATH)
+	accounts = conf.get_accounts()
+
+	if len(sys.argv) > 1:
+		for acc in accounts:
+			conf.remove_account(acc)
+		account = Account()
 		print "Getting username...",
-		USERNAME = getText("email", "")
+		account.email = getText("email", "")
 		print "Done"
 		print "Getting password...",
-		PASSWORD = getText("password", "", True)
+		account.password = getText("password", "", True)
 		print "Done"
 		print "Getting interval...",
-		CHECK_TIME = getText("interval", "Interval at which email will be checked\n<i>ie. 1d20m30s</i>").strip()
+		interval = getText("interval", "Interval at which email will be checked\n<i>ie. 1d20m30s</i>").strip()
 		nums = [str(x) for x in range(0, 10)]
 		units = {"s" : 1, "m" : 60, "h" : 3600, "d" : 86400}
 		i = 0
-		while(len(CHECK_TIME) != 0):
-			for char in CHECK_TIME:
+		while(len(interval) != 0):
+			for char in interval:
 				if(char not in nums):
 					#means it's either a space or a unit
 					if(char in units.keys()):
 						# it's a unit
-						i += int(CHECK_TIME[:CHECK_TIME.find(char)])*units[char]
-						CHECK_TIME = CHECK_TIME[CHECK_TIME.find(char)+1:]
-		CHECK_TIME = i
+						i += int(interval[:interval.find(char)]) * units[char]
+						interval = interval[interval.find(char)+1:]
+		account.interval = i
 		print "Done"
-		gkey.setInfo(USERNAME, PASSWORD, CHECK_TIME)
+		conf.save_account(account)
+		accounts.append(account)
 	
-	x = Notifier(USERNAME, PASSWORD, CHECK_TIME)
+	x = Notifier(accounts)
 	print "Running..."
 	gtk.main()
