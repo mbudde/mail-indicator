@@ -170,7 +170,7 @@ class Account(indicate.Indicator):
             self.emit("auth-error")
             #self.props.enabled = False
             self.hide()
-            return
+            return False
 
         new = 0
         for email in atom["entries"]:
@@ -189,6 +189,7 @@ class Account(indicate.Indicator):
 
         self.link = atom["feed"]["links"][0]["href"] 
         debug("Checking again in %d seconds" % self.interval)
+        return True
 
     def alert(self):
         self.set_property('draw-attention', 'true')
