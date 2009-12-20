@@ -77,46 +77,91 @@ def getText(name, description, hidden=False):
 
 class Account(indicate.Indicator):
 
-	__gsignals__ = {
-		"new-mail": (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-		            (gobject.TYPE_INT,)),
-		"auth-error": (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+	__gproperties__ = {
+		'email': (
+			gobject.TYPE_STRING,
+			'Gmail address', '',
+			None, # default
+			gobject.PARAM_READWRITE
+		),
+		'password': (
+			gobject.TYPE_STRING,
+			'Gmail password', '',
+			None,
+			gobject.PARAM_READWRITE
+		),
+		'interval': (
+			gobject.TYPE_INT,
+			'Interval between mail checks',
+			'The time in seconds to pass before the account is checked for new mail',
+			30,
+			86400,
+			600,
+			gobject.PARAM_READWRITE
+		),
+		'enabled': (
+			gobject.TYPE_BOOLEAN,
+			'should the account be checked for new mail', '',
+			True,
+			gobject.PARAM_READWRITE
+		),
 	}
 
-	def __init__(self):
+	__gsignals__ = {
+		'new-mail': (
+			gobject.SIGNAL_RUN_LAST,
+			gobject.TYPE_NONE,
+			(gobject.TYPE_INT,)
+		),
+		'auth-error': (
+			gobject.SIGNAL_RUN_LAST,
+			gobject.TYPE_NONE,
+			()
+		),
+	}
+
+	def __init__(self, email=None, password=None, interval=600, enabled=True):
 		indicate.Indicator.__init__(self)
-		self.email = None
-		self.password = None
-		self.interval = 300
-		self.enabled = True
-		self.count = 0
+		self.email = email
+		self.password = password
+		self.interval = interval
+		self.enabled = enabled
+		self.set_property('name', email)
 		self.link = None
 		self.last_check = None
 		self.connect("user-display", self.clicked)
-		self.set_property("subtype", "mail")
+		self.set_property('subtype', 'mail')
 		self.req = None
+		self.update_request()
 
-	@property
-	def email(self):
-		return self._email
-	@email.setter
-	def email(self, val):
-		self._email = val
-		if val:
-			self.set_property("name", val)
+	def do_set_property(self, pspec, value):
+		if not hasattr(self, pspec.name):
+			raise AttributeError, 'unknown property %s' % pspec.name
+		setattr(self, pspec.name, value)
+		if pspec.name == 'email':
+			if value:
+				self.set_property('name', email)
+		if pspec.name in ('password', 'email'):
+			self.update_request()
+
+	def do_get_property(self, pspec):
+		return getattr(self, pspec.name)
+
+	def update_request(self):
+		self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
+		self.req.add_header("Authorization", "Basic %s"
+							% (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
 
 	def check_mail(self):
+		if not self.enabled:
+			return
+
 		debug("Check for new mail on %s" % self.email)
-		if not self.req:
-			if not self.email or not self.password:
-				raise ValueError("missing username or password")
-			self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
-			self.req.add_header("Authorization", "Basic %s"
-			                    % (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
 		try:
 			atom = feedparser.parse(urllib2.urlopen(self.req).read())
 		except:
 			self.emit("auth-error")
+			#self.props.enabled = False
 			self.hide()
 			return
 
@@ -133,25 +178,23 @@ class Account(indicate.Indicator):
 		self.last_check = time.time()
 
 		count = int(atom["feed"]["fullcount"])
-		self.set_property("count", str(count));
+		self.set_property('count', str(count))
 
 		self.link = atom["feed"]["links"][0]["href"] 
 		debug("Checking again in %d seconds" % self.interval)
 		gobject.timeout_add_seconds(self.interval, self.check_mail)
 
 	def alert(self):
-		self.set_property("draw-attention", "true")
+		self.set_property('draw-attention', 'true')
 
 	def lower(self):
-		self.set_property("draw-attention", "false")
+		self.set_property('draw-attention', 'false')
 
 	def clicked(self, indicator):
 		if self.link:
 			os.popen("gnome-open '%s' &" % (self.link))
 		self.lower()
 		self.hide()
-
-gobject.type_register(Account)
 
 
 class Notifier:
@@ -170,7 +213,8 @@ class Notifier:
 			if acc.enabled:
 				acc.connect("new-mail", self.notify)
 				acc.connect("auth-error", self.notify_error)
-				gobject.timeout_add_seconds(30, acc.check_mail)
+				acc.connect('notify::enabled', self.account_enabled_cb)
+				gobject.timeout_add_seconds(5, acc.check_mail)
 
 	def clicked(self, server):
 		# TODO: open config dialog
@@ -187,6 +231,14 @@ class Notifier:
 		n = pynotify.Notification("Gmail Notifier - %s" % acc.email,
 		                          "Unable to connect. Email or password may be wrong.")
 		n.show()
+		password = getText('password', '', True)
+		acc.props.password = password
+		acc.check_mail()
+
+	def account_enabled_cb(self, acc, prop):
+		print prop.value_type.name
+		debug('account %s has been %s' % (acc.email, acc.props.enabled and 'enabled'
+									or 'disabled'))
 
 	def destroy(self):
 		self.server.hide()
@@ -232,25 +284,35 @@ class Config:
 		return accounts
 
 	def get_account(self, path):
-		account = Account()
-		account.enabled  = self.gconf.get_bool("%s/enabled" % path)
-		account.email    = self.gconf.get_string("%s/email" % path)
-		account.interval = self.gconf.get_int("%s/interval" % path)
-		auth_token       = self.gconf.get_int("%s/auth_token" % path)
-		account.password = self.keyring.get_password(auth_token)
+		enabled  = self.gconf.get_bool("%s/enabled" % path)
+		email    = self.gconf.get_string("%s/email" % path)
+		interval = self.gconf.get_int("%s/interval" % path)
+		auth_token             = self.gconf.get_int("%s/auth_token" % path)
+		password = self.keyring.get_password(auth_token)
+		account = Account(email=email, password=password, interval=interval, enabled=enabled)
+		account.connect('notify', self._prop_changed)
 		return account
 
 	def save_account(self, account):
-		path = "%s/accounts/%s" % (self.path, account.email)
-		self.gconf.set_bool("%s/enabled" % path, account.enabled)
-		self.gconf.set_string("%s/email" % path, account.email) 
-		self.gconf.set_int("%s/interval" % path, account.interval) 
-		auth_token = self.keyring.save_password(account.email, account.password)
+		path = "%s/accounts/%s" % (self.path, account.props.email)
+		self.gconf.set_bool("%s/enabled" % path, account.props.enabled)
+		self.gconf.set_string("%s/email" % path, account.props.email) 
+		self.gconf.set_int("%s/interval" % path, account.props.interval) 
+		auth_token = self.keyring.save_password(account.props.email, account.props.password)
 		self.gconf.set_int("%s/auth_token" % path, auth_token)
 
 	def remove_account(self, account):
-		path = os.path.join(self.path, "accounts", account.email)
+		path = os.path.join(self.path, "accounts", account.props.email)
 		self.gconf.recursive_unset(path, 0)
+
+	def _prop_changed(self, acc, prop):
+		debug('prop changed in %s' % acc.email)
+		if prop.name in ('email', 'interval', 'enabled'):
+			self.gconf.set('%s/accounts/%s/%s' % (self.path, acc.props.email, prop.name),
+			               acc.get_property(prop.name))
+		if prop.name == 'password':
+			self.keyring.save_password(acc.props.email, acc.props.password)
+
 
 
 if __name__ == "__main__" :
@@ -262,12 +324,11 @@ if __name__ == "__main__" :
 	elif len(sys.argv) > 1:
 		for acc in accounts:
 			conf.remove_account(acc)
-		account = Account()
 		print "Getting username...",
-		account.email = getText("email", "")
+		email = getText("email", "")
 		print "Done"
 		print "Getting password...",
-		account.password = getText("password", "", True)
+		password = getText("password", "", True)
 		print "Done"
 		print "Getting interval...",
 		interval = getText("interval", "Interval at which email will be checked\n<i>ie. 1d20m30s</i>").strip()
@@ -282,8 +343,9 @@ if __name__ == "__main__" :
 						# it's a unit
 						i += int(interval[:interval.find(char)]) * units[char]
 						interval = interval[interval.find(char)+1:]
-		account.interval = i
+		interval = i
 		print "Done"
+		account = Account(email=email, password=password, interval=interval)
 		conf.save_account(account)
 		accounts.append(account)
 	
