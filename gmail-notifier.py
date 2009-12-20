@@ -127,7 +127,8 @@ class Account(indicate.Indicator):
         self.password = password
         self.interval = interval
         self.enabled = enabled
-        self.set_property('name', email)
+        if email:
+            self.set_property('name', email)
         self.link = None
         self.last_check = None
         self.connect("user-display", self.clicked)
@@ -239,6 +240,7 @@ class Config(gobject.GObject):
         self.path = path
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
         self._accounts = None
+        self._pref_dlg = PreferenceDialog()
 
     def get_accounts(self):
         if self._accounts == None:
@@ -278,11 +280,15 @@ class Config(gobject.GObject):
         if prop.name == 'password':
             self.keyring.save_password(acc.props.email, acc.props.password)
 
+    def open_pref_window(self):
+        self._pref_dlg.show()
+
 
 class PreferenceDialog(object):
 
     def __init__(self):
         ui = gtk.Builder()
+        # TODO: path handling
         ui.add_from_file('gmail-notifier.ui')
         self.window = ui.get_object('prefs_window')
         self.account_store = ui.get_object('account_store')
@@ -291,10 +297,10 @@ class PreferenceDialog(object):
         ui.get_object('about').connect('clicked', self.show_aboutdialog)
         ui.get_object('add_account').connect('clicked', self.add_account)
         ui.get_object('remove_account').connect('clicked', self.remove_account)
+        ui.get_object('edit_account').connect('clicked', self.edit_account)
 
-    def run(self):
+    def show(self):
         self.window.show()
-        gtk.main()
 
     def show_aboutdialog(self, *args):
         about = gtk.AboutDialog()
@@ -312,6 +318,9 @@ class PreferenceDialog(object):
         self.account_store.append((True, acc.email, acc))
 
     def remove_account(self, w):
+        pass
+
+    def edit_account(self, w):
         pass
 
 
@@ -336,8 +345,7 @@ class Notifier:
                 acc.start_check()
 
     def clicked(self, server):
-        # TODO: open config dialog
-        pass
+        self.conf.open_pref_window()
 
     def notify(self, acc, count):
         str = "You have %d %s mail%s." % (count, self.first_check and "unread"
