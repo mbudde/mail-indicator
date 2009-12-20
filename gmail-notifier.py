@@ -34,8 +34,6 @@ if(len(need) > 0):
         print "\t%s" % (deps[dep])
     print "\nNote: Package names may vary from distro to distro."
 
-import pygtk
-pygtk.require('2.12')
 import gtk
 import gobject
 import urllib2
@@ -233,20 +231,23 @@ class Keyring:
 
 
 class Config(gobject.GObject):
+
     def __init__(self, path):
         gobject.GObject.__init__(self)
         self.gconf = gconf.client_get_default()
         self.path = path
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
+        self._accounts = None
 
     def get_accounts(self):
-        paths = self.gconf.all_dirs(os.path.join(self.path, "accounts"))
-        accounts = []
-        for path in paths:
-            accounts.append(self.get_account(path))
-        return accounts
+        if self._accounts == None:
+            paths = self.gconf.all_dirs('%s/accounts' % self.path)
+            self._accounts = []
+            for path in paths:
+                self._accounts.append(self._init_account_from_gconf(path))
+        return self._accounts
 
-    def get_account(self, path):
+    def _init_account_from_gconf(self, path):
         enabled    = self.gconf.get_bool("%s/enabled" % path)
         email      = self.gconf.get_string("%s/email" % path)
         interval   = self.gconf.get_int("%s/interval" % path)
@@ -329,7 +330,7 @@ class Notifier:
         pynotify.init("GmailNotifier")
 
     def start_mail_checks(self):
-        for acc in self.conf.props.accounts:
+        for acc in self.conf.get_accounts():
             debug("Account: %s, enabled: %s" % (acc.email, acc.enabled))
             if acc.enabled:
                 acc.connect("new-mail", self.notify)
