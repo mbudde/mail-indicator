@@ -283,12 +283,9 @@ class PreferenceDialog(object):
 
     def __init__(self):
         ui = gtk.Builder()
-        ui.add_from_file('settings.xml')
-
+        ui.add_from_file('gmail-notifier.ui')
         self.window = ui.get_object('prefs_window')
-
         self.account_store = ui.get_object('account_store')
-
         # Connect callbacks
         ui.get_object('ok_button').connect('clicked', gtk.main_quit)
         ui.get_object('about').connect('clicked', self.show_aboutdialog)
