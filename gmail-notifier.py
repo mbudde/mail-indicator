@@ -234,6 +234,51 @@ class Keyring:
 
 class Config(gobject.GObject):
 
+    __gproperties__ = {
+        'notifications': (
+            gobject.TYPE_BOOLEAN,
+            'Show notifications?', '',
+            True,
+            gobject.PARAM_READWRITE
+        ),
+        'notification-mode': (
+            gobject.TYPE_STRING,
+            'What notifications to show', '',
+            'count', # 'count' or 'email'
+            gobject.PARAM_READWRITE
+        ),
+        'run-on-startup': (
+            gobject.TYPE_BOOLEAN,
+            'Program is run on startup', '',
+            False,
+            gobject.PARAM_READWRITE
+        ),
+        'mail-application': (
+            gobject.TYPE_STRING,
+            'Application to open when an inbox is clicked', '',
+            'browser', # 'browser' or 'custom'
+            gobject.PARAM_READWRITE
+        ),
+        'custom-app-name': (
+            gobject.TYPE_STRING,
+            'Custom application name', '',
+            '',
+            gobject.PARAM_READWRITE
+        ),
+        'custom-app-icon': (
+            gobject.TYPE_STRING,
+            'Custom application icon', '',
+            '',
+            gobject.PARAM_READWRITE
+        ),
+        'custom-app-exec': (
+            gobject.TYPE_STRING,
+            'Custom application command', '',
+            '',
+            gobject.PARAM_READWRITE
+        ),
+    }
+
     def __init__(self, path):
         gobject.GObject.__init__(self)
         self.gconf = gconf.client_get_default()
@@ -241,14 +286,33 @@ class Config(gobject.GObject):
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
         self._accounts = None
         self._pref_dlg = PreferenceDialog(self)
+        self._init_properties_from_gconf()
 
-    def get_accounts(self):
-        if self._accounts == None:
-            paths = self.gconf.all_dirs('%s/accounts' % self.path)
-            self._accounts = []
-            for path in paths:
-                self._accounts.append(self._init_account_from_gconf(path))
-        return self._accounts
+    def do_set_property(self, pspec, value):
+        if not hasattr(self, '_'+pspec.name):
+            raise AttributeError, 'unknown property %s' % pspec.name
+        if (pspec.name == 'notification-mode' and value not in ('count', 'email')) or \
+           (pspec.name == 'mail-application' and value not in ('browser', 'custom')):
+            raise ValueError, 'invalid value `%s\' or property %s' % (value, pspec.name)
+        setattr(self, '_'+pspec.name, value)
+        self.gconf.set_value('%s/%s' % (self.path, pspec.name), value)
+
+    def do_get_property(self, pspec):
+        if not hasattr(self, '_'+pspec.name):
+            raise AttributeError, 'unknown property %s' % pspec.name
+        return getattr(self, '_'+pspec.name)
+
+    def _init_properties_from_gconf(self):
+        for pspec in self.props:
+            path = '%s/%s' % (self.path, pspec.name)
+            try:
+                val = self.gconf.get_value(path)
+            except ValueError:
+                val = pspec.default_value
+                debug('default val is %s' % val)
+                self.gconf.set_value(path, val)
+            debug('%s is %s' % (pspec.name, val))
+            setattr(self, '_'+pspec.name, val)
 
     def _init_account_from_gconf(self, path):
         enabled    = self.gconf.get_bool("%s/enabled" % path)
@@ -259,6 +323,14 @@ class Config(gobject.GObject):
         account    = Account(email=email, password=password, interval=interval, enabled=enabled)
         account.connect('notify', self._prop_changed)
         return account
+
+    def get_accounts(self):
+        if self._accounts == None:
+            paths = self.gconf.all_dirs('%s/accounts' % self.path)
+            self._accounts = []
+            for path in paths:
+                self._accounts.append(self._init_account_from_gconf(path))
+        return self._accounts
 
     def save_account(self, account):
         path = "%s/accounts/%s" % (self.path, account.props.email)
