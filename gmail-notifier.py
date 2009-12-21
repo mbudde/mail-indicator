@@ -75,10 +75,10 @@ class Account(indicate.Indicator):
         'interval': (
             gobject.TYPE_INT,
             'Interval between mail checks',
-            'The time in seconds to pass before the account is checked for new mail',
-            30,
-            86400,
-            600,
+            'The time in minutes to pass before the account is checked for new mail',
+            1,
+            2880,
+            10,
             gobject.PARAM_READWRITE
         ),
         'enabled': (
@@ -102,7 +102,7 @@ class Account(indicate.Indicator):
         ),
     }
 
-    def __init__(self, email=None, password=None, interval=600, enabled=True):
+    def __init__(self, email=None, password=None, interval=10, enabled=True):
         indicate.Indicator.__init__(self)
         self.email = email
         self.password = password
@@ -136,7 +136,7 @@ class Account(indicate.Indicator):
                             % (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
 
     def start_check(self):
-        gobject.timeout_add_seconds(self.interval, self.check_mail)
+        gobject.timeout_add_seconds(self.interval*60, self.check_mail)
 
     def stop_check(self):
         pass
@@ -427,16 +427,30 @@ class PreferenceDialog(object):
         pass
 
     def edit_account(self, w):
-        # acc = current selection
-        # if not acc: return
-        # self.open_account_editor(acc)
-        self.open_account_editor(None)
+        treesel = self.ui.get_object('account_treeview').get_selection()
+        model, iter = treesel.get_selected()
+        if not iter:
+            return
+        acc = model.get_value(iter, 2)
+        self.open_account_editor(acc)
 
     def open_account_editor(self, acc):
+        acc2widget_map = (
+            ('email', 'email', 'text'),
+            ('password', 'password', 'text'),
+            ('interval', 'interval', 'value')
+        )
+        for aprop, widget, wprop in acc2widget_map:
+            self.ui.get_object(widget).set_property(wprop, getattr(acc.props, aprop))
         self.account_editor.show()
 
     def close_account_editor(self, w):
         self.account_editor.hide()
+
+    def clear_password(self, w):
+        entry = self.ui.get_object('password')
+        entry.props.text = ''
+        entry.grab_focus()
 
     def generic_save_state(self, w):
         if not w.props.active:
