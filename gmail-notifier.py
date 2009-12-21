@@ -386,8 +386,9 @@ class PreferenceDialog(object):
                     val, radio = item
                     if self.conf.get_property(prop) == val:
                         self.ui.get_object(radio).props.active = True
-        self.ui.get_object('application_name').props.label = self.conf.props.custom_app_name
-        # TODO: set application_icon
+        self.set_app_display_from_data({
+            'name': self.conf.props.custom_app_name,
+            'icon': self.conf.props.custom_app_icon})
         self.window.show()
 
     def hide(self, *args):
