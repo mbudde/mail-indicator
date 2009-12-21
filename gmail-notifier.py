@@ -258,6 +258,12 @@ class Config(gobject.GObject):
             '',
             gobject.PARAM_READWRITE
         ),
+        'custom-app-terminal': (
+            gobject.TYPE_BOOLEAN,
+            'Run custom application in a terminal', '',
+            False,
+            gobject.PARAM_READWRITE
+        ),
     }
 
     def __init__(self, path):
@@ -452,6 +458,8 @@ class PreferenceDialog(object):
         app_data = self.get_data_from_desktop_file(data.get_uris()[0])
         context.finish(False, False, time)
         self.set_app_display_from_data(app_data)
+        for key, val in app_data.iteritems():
+            self.conf.set_property('custom-app-'+key, val)
 
     def get_data_from_desktop_file(self, uri):
         path = gio.File(uri).get_path()
