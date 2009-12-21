@@ -56,27 +56,6 @@ def debug(str):
     if DEBUG:
         print str
 
-def responseToDialog(entry, dialog, response):
-    dialog.response(response)
-
-def getText(name, description, hidden=False):
-    dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK, None)
-    dialog.set_markup("Please enter your <b>%s</b>:" % (name))
-    entry = gtk.Entry()
-    if(hidden):
-        entry.set_visibility(False)
-    entry.connect("activate", responseToDialog, dialog, gtk.RESPONSE_OK)
-    hbox = gtk.HBox()
-    hbox.pack_start(gtk.Label("%s:" % (name.capitalize())), False, 5, 5)
-    hbox.pack_end(entry)
-    dialog.format_secondary_markup(description)
-    dialog.vbox.pack_end(hbox, True, True, 0)
-    dialog.show_all()
-    dialog.run()
-    text = entry.get_text()
-    dialog.destroy()
-    return text
-
 
 class Account(indicate.Indicator):
 
@@ -536,9 +515,6 @@ class Notifier:
         n = pynotify.Notification("Gmail Notifier - %s" % acc.email,
                                   "Unable to connect. Email or password may be wrong.")
         n.show()
-        password = getText('password', '', True)
-        acc.props.password = password
-        acc.check_mail()
 
     def account_enabled_cb(self, acc, prop):
         debug('account %s has been %s' % (acc.email, acc.props.enabled and 'enabled' or 'disabled'))
@@ -560,36 +536,6 @@ class GmailNotifier:
 
 
 if __name__ == "__main__" :
-
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
         DEBUG = True
-    elif len(sys.argv) > 1:
-        for acc in accounts:
-            conf.remove_account(acc)
-        print "Getting username...",
-        email = getText("email", "")
-        print "Done"
-        print "Getting password...",
-        password = getText("password", "", True)
-        print "Done"
-        print "Getting interval...",
-        interval = getText("interval", "Interval at which email will be checked\n<i>ie. 1d20m30s</i>").strip()
-        nums = [str(x) for x in range(0, 10)]
-        units = {"s" : 1, "m" : 60, "h" : 3600, "d" : 86400}
-        i = 0
-        while(len(interval) != 0):
-            for char in interval:
-                if(char not in nums):
-                    #means it's either a space or a unit
-                    if(char in units.keys()):
-                        # it's a unit
-                        i += int(interval[:interval.find(char)]) * units[char]
-                        interval = interval[interval.find(char)+1:]
-        interval = i
-        print "Done"
-        account = Account(email=email, password=password, interval=interval)
-        conf.save_account(account)
-        accounts.append(account)
-
-    print "Running..."
     GmailNotifier()
