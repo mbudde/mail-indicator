@@ -240,7 +240,7 @@ class Config(gobject.GObject):
         self.path = path
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
         self._accounts = None
-        self._pref_dlg = PreferenceDialog()
+        self._pref_dlg = PreferenceDialog(self)
 
     def get_accounts(self):
         if self._accounts == None:
@@ -267,10 +267,14 @@ class Config(gobject.GObject):
         self.gconf.set_int("%s/interval" % path, account.props.interval) 
         auth_token = self.keyring.save_password(account.props.email, account.props.password)
         self.gconf.set_int("%s/auth_token" % path, auth_token)
+        account.connect('notify', self._prop_changed)
+        self._accounts.append(account)
 
     def remove_account(self, account):
         path = os.path.join(self.path, "accounts", account.props.email)
         self.gconf.recursive_unset(path, 0)
+        # disconnect from notify signal
+        self._accounts.remove(account)
 
     def _prop_changed(self, acc, prop):
         debug('prop changed in %s' % acc.email)
@@ -286,21 +290,36 @@ class Config(gobject.GObject):
 
 class PreferenceDialog(object):
 
-    def __init__(self):
+    def __init__(self, conf):
+        self.conf = conf
         ui = gtk.Builder()
+        self.ui = ui
         # TODO: path handling
         ui.add_from_file('gmail-notifier.ui')
         self.window = ui.get_object('prefs_window')
+        self.account_editor = ui.get_object('account_editor')
         self.account_store = ui.get_object('account_store')
-        # Connect callbacks
-        ui.get_object('ok_button').connect('clicked', gtk.main_quit)
-        ui.get_object('about').connect('clicked', self.show_aboutdialog)
-        ui.get_object('add_account').connect('clicked', self.add_account)
-        ui.get_object('remove_account').connect('clicked', self.remove_account)
-        ui.get_object('edit_account').connect('clicked', self.edit_account)
+
+        ui.connect_signals(self)
+        # Populate store
+        for acc in conf.get_accounts():
+            self.account_store.append((
+                acc.props.enabled,
+                acc.props.email,
+                acc
+            ))
+
+    def get_widgets(self, *args):
+        return [self.ui.get_object(name) for name in args]
 
     def show(self):
         self.window.show()
+
+    def hide(self, *args):
+        self.window.hide()
+
+    def quit(self, *args):
+        gtk.main_quit()
 
     def show_aboutdialog(self, *args):
         about = gtk.AboutDialog()
@@ -314,15 +333,44 @@ class PreferenceDialog(object):
 
     def add_account(self, w):
         acc = Account()
-        acc.email = 'mbudde@gmail.com'
-        self.account_store.append((True, acc.email, acc))
+        if self.open_account_editor(acc):
+            return
+        self.account_store.append((acc.props.enabled, acc.props.email, acc))
+        self.conf.save_account(acc)
 
     def remove_account(self, w):
+        # acc = current selection
+        # if not acc: return
+        # self.conf.remove_account(acc)
         pass
 
     def edit_account(self, w):
+        # acc = current selection
+        # if not acc: return
+        # self.open_account_editor(acc)
+        self.open_account_editor(None)
+
+    def open_account_editor(self, acc):
+        self.account_editor.show()
+
+    def close_account_editor(self, w):
+        self.account_editor.hide()
+
+    def generic_save_state(self, w):
         pass
 
+    def run_on_startup_toggled(self, w):
+        pass
+
+    def enable_notifications_globally_toggled(self, w):
+        state = w.props.active
+        for child in self.get_widgets('notify_count', 'notify_each_mail'):
+            child.props.sensitive = state
+
+    def open_custom_application_toggled(self, w):
+        state = w.props.active
+        for child in self.get_widgets('application_icon', 'application_name'):
+            child.props.sensitive = state
 
 class Notifier:
 
@@ -364,8 +412,7 @@ class Notifier:
 
     def account_enabled_cb(self, acc, prop):
         print prop.value_type.name
-        debug('account %s has been %s' % (acc.email, acc.props.enabled and 'enabled'
-                                    or 'disabled'))
+        debug('account %s has been %s' % (acc.email, acc.props.enabled and 'enabled' or 'disabled'))
 
     def destroy(self):
         self.server.hide()
