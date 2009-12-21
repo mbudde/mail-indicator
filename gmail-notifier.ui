@@ -252,11 +252,17 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkImage" id="application_icon">
+                          <object class="GtkEventBox" id="application_icon_eb">
                             <property name="visible">True</property>
-                            <property name="sensitive">False</property>
-                            <property name="stock">gtk-dnd</property>
-                            <property name="icon-size">5</property>
+                            <signal name="drag_data_received" handler="drag_data_received"/>
+                            <child>
+                              <object class="GtkImage" id="application_icon">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="stock">gtk-dnd</property>
+                                <property name="icon-size">5</property>
+                              </object>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">False</property>

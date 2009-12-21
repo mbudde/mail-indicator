@@ -36,6 +36,8 @@ if(len(need) > 0):
 
 import gtk
 import gobject
+import gio
+import glib
 import urllib2
 import base64
 import os
@@ -309,9 +311,7 @@ class Config(gobject.GObject):
                 val = self.gconf.get_value(path)
             except ValueError:
                 val = pspec.default_value
-                debug('default val is %s' % val)
                 self.gconf.set_value(path, val)
-            debug('%s is %s' % (pspec.name, val))
             setattr(self, '_'+pspec.name, val)
 
     def _init_account_from_gconf(self, path):
@@ -380,6 +380,12 @@ class PreferenceDialog(object):
                 acc.props.email,
                 acc
             ))
+
+        # Setup application DnD
+        icon = ui.get_object('application_icon_eb')
+        icon.drag_dest_set(gtk.DEST_DEFAULT_ALL,
+                           [('text/uri-list', 0, 1)],
+                           gtk.gdk.ACTION_COPY)
 
     def get_widgets(self, *args):
         return [self.ui.get_object(name) for name in args]
@@ -459,8 +465,42 @@ class PreferenceDialog(object):
 
     def open_custom_application_toggled(self, w):
         state = w.props.active
-        for child in self.get_widgets('application_icon', 'application_name'):
+        for child in self.get_widgets('application_icon', 'application_icon_eb', 'application_name'):
             child.props.sensitive = state
+
+    def drag_data_received(self, w, context, x, y, data, info, time):
+        app_data = self.get_data_from_desktop_file(data.get_uris()[0])
+        context.finish(False, False, time)
+        self.set_app_display_from_data(app_data)
+
+    def get_data_from_desktop_file(self, uri):
+        path = gio.File(uri).get_path()
+        data = {'name': None, 'exec': None, 'icon': None, 'terminal': None}
+        file = open(path)
+        for line in file:
+            for s in ('Name', 'Exec', 'Icon', 'Terminal'):
+                if line.startswith(s+'='):
+                    data[s.lower()] = line.split('=')[1].rstrip()
+                    break
+        file.close()
+        if data['terminal']:
+            data['terminal'] = (data['terminal'].lower() == 'true') and True or False
+        return data
+
+    def set_app_display_from_data(self, data):
+        self.ui.get_object('application_name').props.label = data['name']
+        icon = self.ui.get_object('application_icon')
+        try:
+            if data['icon'].startswith('/'):
+                pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(data['icon'], 32, 32)
+            else:
+                pixbuf = gtk.icon_theme_get_default().load_icon(
+                    data['icon'], 32, gtk.ICON_LOOKUP_USE_BUILTIN)
+        except glib.GError:
+            pixbuf = gtk.icon_theme_get_default().load_icon(
+                'gnome-panel-launcher', 32, gtk.ICON_LOOKUP_USE_BUILTIN)
+        icon.set_from_pixbuf(pixbuf)
+
 
 class Notifier:
 
@@ -501,7 +541,6 @@ class Notifier:
         acc.check_mail()
 
     def account_enabled_cb(self, acc, prop):
-        print prop.value_type.name
         debug('account %s has been %s' % (acc.email, acc.props.enabled and 'enabled' or 'disabled'))
 
     def destroy(self):
