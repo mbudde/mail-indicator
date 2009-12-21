@@ -385,6 +385,24 @@ class PreferenceDialog(object):
         return [self.ui.get_object(name) for name in args]
 
     def show(self):
+        prop2widget_map = {
+            'notifications': 'enable_notifications_globally',
+            'run-on-startup': 'run_on_startup',
+            'notification-mode': [('count', 'notify_count'),
+                                  ('mail', 'notify_each_mail')],
+            'mail-application': [('browser', 'use_default_browser'),
+                                 ('custom', 'use_custom_application')],
+        }
+        for prop, widget in prop2widget_map.iteritems():
+            if type(widget) == str:
+                self.ui.get_object(widget).props.active = self.conf.get_property(prop)
+            elif type(widget) == list:
+                for item in widget:
+                    val, radio = item
+                    if self.conf.get_property(prop) == val:
+                        self.ui.get_object(radio).props.active = True
+        self.ui.get_object('application_name').props.label = self.conf.props.custom_app_name
+        # TODO: set application_icon
         self.window.show()
 
     def hide(self, *args):
