@@ -439,20 +439,33 @@ class PreferenceDialog(object):
         self.account_editor.hide()
 
     def generic_save_state(self, w):
-        pass
+        if not w.props.active:
+            return
+        save_map = (
+            ('use_default_browser', 'mail-application', 'browser'),
+            ('notify_count', 'notification-mode', 'count'),
+            ('notify_email', 'notification-mode', 'email'),
+        )
+        for name, prop, val in save_map:
+            if w.name == name:
+                self.conf.set_property(prop, val)
+                break
 
     def run_on_startup_toggled(self, w):
-        pass
+        self.conf.props.run_on_startup = w.props.active
 
     def enable_notifications_globally_toggled(self, w):
-        state = w.props.active
-        for child in self.get_widgets('notify_count', 'notify_each_mail'):
-            child.props.sensitive = state
+        active = w.props.active
+        for child in self.get_widgets('notify_count', 'notify_email'):
+            child.props.sensitive = active
+        self.conf.props.notifications = active
 
-    def open_custom_application_toggled(self, w):
-        state = w.props.active
+    def use_custom_application_toggled(self, w):
+        active = w.props.active
         for child in self.get_widgets('application_icon', 'application_icon_eb', 'application_name'):
-            child.props.sensitive = state
+            child.props.sensitive = active
+        if active:
+            self.conf.props.mail_application = 'custom'
 
     def drag_data_received(self, w, context, x, y, data, info, time):
         app_data = self.get_data_from_desktop_file(data.get_uris()[0])
