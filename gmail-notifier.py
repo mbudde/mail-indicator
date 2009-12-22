@@ -393,11 +393,12 @@ class PreferenceDialog(object):
         ui.connect_signals(self)
         # Populate store
         for acc in conf.get_accounts():
-            self.account_store.append((
+            iter = self.account_store.append((
                 acc.props.enabled,
                 acc.props.email,
                 acc
             ))
+            acc.connect('notify::enabled', self.account_enabled_changed, iter)
 
         # Setup application DnD
         icon = ui.get_object('application_icon_eb')
@@ -476,6 +477,13 @@ class PreferenceDialog(object):
         state = row[self.COL_ENABLED]
         row[self.COL_ENABLED] = not state
         row[self.COL_ACCOUNT].props.enabled = not state
+
+    def account_enabled_changed(self, acc, pspec, iter):
+        model = self.account_treeview.get_model()
+        path = model.get_path(iter)
+        state = model[path][self.COL_ENABLED]
+        if state != acc.props.enabled:
+            model[path][self.COL_ENABLED] = acc.props.enabled
 
     def open_account_editor(self, acc):
         self.account_to_editor_map = (
