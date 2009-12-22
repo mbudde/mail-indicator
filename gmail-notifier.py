@@ -48,13 +48,33 @@ import gconf
 import gnomekeyring
 
 
-DEBUG = False
+if __name__ == "__main__" :
+    if len(sys.argv) > 1 and sys.argv[1] == "debug":
+        DEBUG = True
+    else:
+        DEBUG = False
 
 GCONF_PATH = "/apps/gmail-notifier"
 
 def debug(str):
     if DEBUG:
         print str
+
+def debug_fun(fun):
+    if not DEBUG:
+        return fun
+    def dbg_fun(*args, **kwargs):
+        print '%s ( %s %s )' % (fun.__name__, args, kwargs)
+        return fun(*args, **kwargs)
+    return dbg_fun
+
+def debug_method(fun):
+    if not DEBUG:
+        return fun
+    def dbg_fun(klass, *args, **kwargs):
+        print '%s.%s ( %s %s )' % (klass.__class__, fun.__name__, args, kwargs)
+        return fun(klass, *args, **kwargs)
+    return dbg_fun
 
 
 class Account(indicate.Indicator):
@@ -117,12 +137,14 @@ class Account(indicate.Indicator):
         self.req = None
         self.update_request()
 
+    @debug_method
     def do_get_property(self, pspec):
         try:
             return getattr(self, pspec.name)
         except AttributeError:
             return pspec.default_value
 
+    @debug_method
     def do_set_property(self, pspec, value):
         if pspec.name == 'email':
             if value:
@@ -333,6 +355,7 @@ class Config(gobject.GObject):
         # disconnect from notify signal
         self._accounts.remove(account)
 
+    @debug_method
     def _prop_changed(self, acc, pspec):
         debug('prop changed in %s' % acc.email)
         if pspec.name in ('email', 'interval', 'enabled'):
