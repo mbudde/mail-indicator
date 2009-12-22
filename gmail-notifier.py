@@ -372,6 +372,8 @@ class Config(gobject.GObject):
 
 class PreferenceDialog(object):
 
+    COL_ENABLED, COL_EMAIL, COL_ACCOUNT = range(3)
+
     def __init__(self, conf):
         self.conf = conf
         ui = gtk.Builder()
@@ -440,6 +442,13 @@ class PreferenceDialog(object):
         about.connect('response', close)
         about.show()
 
+    def get_account_selection(self):
+        treesel = self.ui.get_object('account_treeview').get_selection()
+        model, iter = treesel.get_selected()
+        if not iter:
+            return None
+        return model.get_value(iter, self.COL_ACCOUNT)
+
     def add_account(self, w):
         acc = Account()
         if self.open_account_editor(acc):
@@ -454,12 +463,9 @@ class PreferenceDialog(object):
         pass
 
     def edit_account(self, w):
-        treesel = self.ui.get_object('account_treeview').get_selection()
-        model, iter = treesel.get_selected()
-        if not iter:
-            return
-        acc = model.get_value(iter, 2)
-        self.open_account_editor(acc)
+        acc = self.get_account_selection()
+        if acc:
+            self.open_account_editor(acc)
 
     def open_account_editor(self, acc):
         self.account_to_editor_map = (
