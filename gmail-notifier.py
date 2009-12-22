@@ -117,18 +117,19 @@ class Account(indicate.Indicator):
         self.req = None
         self.update_request()
 
+    def do_get_property(self, pspec):
+        try:
+            return getattr(self, pspec.name)
+        except AttributeError:
+            return pspec.default_value
+
     def do_set_property(self, pspec, value):
-        if not hasattr(self, pspec.name):
-            raise AttributeError, 'unknown property %s' % pspec.name
-        setattr(self, pspec.name, value)
         if pspec.name == 'email':
             if value:
-                self.set_property('name', email)
+                self.set_property('name', value)
         if pspec.name in ('password', 'email'):
             self.update_request()
-
-    def do_get_property(self, pspec):
-        return getattr(self, pspec.name)
+        setattr(self, pspec.name, value)
 
     def update_request(self):
         self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
@@ -136,10 +137,10 @@ class Account(indicate.Indicator):
                             % (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
 
     def start_check(self):
-        gobject.timeout_add_seconds(self.interval*60, self.check_mail)
+        self._event_id = gobject.timeout_add_seconds(self.interval*60, self.check_mail)
 
     def stop_check(self):
-        pass
+        gobejct.source_remove(self._event_id)
 
     def check_mail(self):
         if not self.enabled:
@@ -166,8 +167,8 @@ class Account(indicate.Indicator):
             self.emit("new-mail", new)
         self.last_check = time.time()
 
-        count = int(atom["feed"]["fullcount"])
-        self.set_property('count', str(count))
+        count = atom["feed"]["fullcount"]
+        self.set_property('count', count)
 
         self.link = atom["feed"]["links"][0]["href"] 
         debug("Checking again in %d seconds" % self.interval)
@@ -275,19 +276,18 @@ class Config(gobject.GObject):
         self._pref_dlg = PreferenceDialog(self)
         self._init_properties_from_gconf()
 
+    def do_get_property(self, pspec):
+        try:
+            return getattr(self, '_'+pspec.name)
+        except AttributeError:
+            return pspec.default_value
+
     def do_set_property(self, pspec, value):
-        if not hasattr(self, '_'+pspec.name):
-            raise AttributeError, 'unknown property %s' % pspec.name
         if (pspec.name == 'notification-mode' and value not in ('count', 'email')) or \
            (pspec.name == 'mail-application' and value not in ('browser', 'custom')):
             raise ValueError, 'invalid value `%s\' or property %s' % (value, pspec.name)
         setattr(self, '_'+pspec.name, value)
         self.gconf.set_value('%s/%s' % (self.path, pspec.name), value)
-
-    def do_get_property(self, pspec):
-        if not hasattr(self, '_'+pspec.name):
-            raise AttributeError, 'unknown property %s' % pspec.name
-        return getattr(self, '_'+pspec.name)
 
     def _init_properties_from_gconf(self):
         for pspec in self.props:
@@ -333,12 +333,12 @@ class Config(gobject.GObject):
         # disconnect from notify signal
         self._accounts.remove(account)
 
-    def _prop_changed(self, acc, prop):
+    def _prop_changed(self, acc, pspec):
         debug('prop changed in %s' % acc.email)
-        if prop.name in ('email', 'interval', 'enabled'):
-            self.gconf.set('%s/accounts/%s/%s' % (self.path, acc.props.email, prop.name),
-                           acc.get_property(prop.name))
-        if prop.name == 'password':
+        if pspec.name in ('email', 'interval', 'enabled'):
+            self.gconf.set_value('%s/accounts/%s/%s' % (self.path, acc.props.email, pspec.name),
+                           getattr(acc.props, pspec.name))
+        if pspec.name == 'password':
             self.keyring.save_password(acc.props.email, acc.props.password)
 
     def open_pref_window(self):
@@ -435,16 +435,22 @@ class PreferenceDialog(object):
         self.open_account_editor(acc)
 
     def open_account_editor(self, acc):
-        acc2widget_map = (
+        self.account_to_editor_map = (
             ('email', 'email', 'text'),
             ('password', 'password', 'text'),
             ('interval', 'interval', 'value')
         )
-        for aprop, widget, wprop in acc2widget_map:
+        for aprop, widget, wprop in self.account_to_editor_map:
             self.ui.get_object(widget).set_property(wprop, getattr(acc.props, aprop))
+        self.account_editor.set_data('account', acc)
         self.account_editor.show()
 
     def close_account_editor(self, w):
+        if w.props.name == 'editor_ok':
+            acc = self.account_editor.get_data('account')
+            for aprop, id, wprop in self.account_to_editor_map:
+                w = self.ui.get_object(id)
+                setattr(acc.props, aprop, w.get_property(wprop))
         self.account_editor.hide()
 
     def clear_password(self, w):

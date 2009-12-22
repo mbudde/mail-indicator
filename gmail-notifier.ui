@@ -757,7 +757,7 @@
                 <property name="spacing">6</property>
                 <property name="layout_style">end</property>
                 <child>
-                  <object class="GtkButton" id="button2">
+                  <object class="GtkButton" id="editor_cancel">
                     <property name="label">gtk-cancel</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -772,7 +772,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button1">
+                  <object class="GtkButton" id="editor_ok">
                     <property name="label">gtk-ok</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
