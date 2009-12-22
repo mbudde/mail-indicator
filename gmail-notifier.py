@@ -64,16 +64,18 @@ def debug_fun(fun):
     if not DEBUG:
         return fun
     def dbg_fun(*args, **kwargs):
-        print '%s ( %s %s )' % (fun.__name__, args, kwargs)
-        return fun(*args, **kwargs)
+        res = fun(*args, **kwargs)
+        print '%s ( %s %s ) -> %s' % (fun.__name__, args, kwargs, res)
+        return res
     return dbg_fun
 
 def debug_method(fun):
     if not DEBUG:
         return fun
     def dbg_fun(klass, *args, **kwargs):
-        print '%s.%s ( %s %s )' % (klass.__class__, fun.__name__, args, kwargs)
-        return fun(klass, *args, **kwargs)
+        res = fun(klass, *args, **kwargs)
+        print '%s.%s ( %s %s ) -> %s' % (klass.__class__, fun.__name__, args, kwargs, res)
+        return res
     return dbg_fun
 
 
@@ -137,14 +139,12 @@ class Account(indicate.Indicator):
         self.req = None
         self.update_request()
 
-    @debug_method
     def do_get_property(self, pspec):
         try:
             return getattr(self, pspec.name)
         except AttributeError:
             return pspec.default_value
 
-    @debug_method
     def do_set_property(self, pspec, value):
         if pspec.name == 'email':
             if value:
@@ -298,12 +298,14 @@ class Config(gobject.GObject):
         self._accounts = None
         self._pref_dlg = PreferenceDialog(self)
 
+    @debug_method
     def do_get_property(self, pspec):
         try:
             return getattr(self, '_'+pspec.name)
         except AttributeError:
             return pspec.default_value
 
+    @debug_method
     def do_set_property(self, pspec, value):
         if (pspec.name == 'notification-mode' and value not in ('count', 'email')) or \
            (pspec.name == 'mail-application' and value not in ('browser', 'custom')):
