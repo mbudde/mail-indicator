@@ -74,7 +74,9 @@
                                   <object class="GtkTreeViewColumn" id="enabled_col">
                                     <property name="title">Enabled</property>
                                     <child>
-                                      <object class="GtkCellRendererToggle" id="enabled_cellrender"/>
+                                      <object class="GtkCellRendererToggle" id="enabled_cellrender">
+                                        <signal name="toggled" handler="account_enabled_toggle"/>
+                                      </object>
                                       <attributes>
                                         <attribute name="active">0</attribute>
                                       </attributes>

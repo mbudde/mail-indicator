@@ -385,6 +385,7 @@ class PreferenceDialog(object):
         self.window = ui.get_object('prefs_window')
         self.account_editor = ui.get_object('account_editor')
         self.account_store = ui.get_object('account_store')
+        self.account_treeview = ui.get_object('account_treeview')
 
         ui.connect_signals(self)
         # Populate store
@@ -445,7 +446,7 @@ class PreferenceDialog(object):
         about.show()
 
     def get_account_selection(self):
-        treesel = self.ui.get_object('account_treeview').get_selection()
+        treesel = self.account_treeview.get_selection()
         model, iter = treesel.get_selected()
         if not iter:
             return None
@@ -459,15 +460,19 @@ class PreferenceDialog(object):
         self.conf.save_account(acc)
 
     def remove_account(self, w):
-        # acc = current selection
-        # if not acc: return
-        # self.conf.remove_account(acc)
         pass
 
     def edit_account(self, w):
         acc = self.get_account_selection()
         if acc:
             self.open_account_editor(acc)
+
+    def account_enabled_toggle(self, w, path):
+        model = self.account_treeview.get_model()
+        row = model[path]
+        state = row[self.COL_ENABLED]
+        row[self.COL_ENABLED] = not state
+        row[self.COL_ACCOUNT].props.enabled = not state
 
     def open_account_editor(self, acc):
         self.account_to_editor_map = (
@@ -578,6 +583,7 @@ class Notifier:
             if acc.enabled:
                 acc.connect("new-mail", self.notify)
                 acc.connect("auth-error", self.notify_error)
+                acc.connect('notify::enabled', self.account_enabled_cb)
                 acc.start_check()
 
     def clicked(self, server):
