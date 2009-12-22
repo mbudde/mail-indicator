@@ -359,8 +359,10 @@ class Config(gobject.GObject):
     def _prop_changed(self, acc, pspec):
         debug('prop changed in %s' % acc.email)
         if pspec.name in ('email', 'interval', 'enabled'):
+            # Can't use get_property because of libindicate bug (LP#499490)
             self.gconf.set_value('%s/accounts/%s/%s' % (self.path, acc.props.email, pspec.name),
-                           getattr(acc.props, pspec.name))
+                                 getattr(acc.props, pspec.name))
+                
         if pspec.name == 'password':
             self.keyring.save_password(acc.props.email, acc.props.password)
 
@@ -464,6 +466,7 @@ class PreferenceDialog(object):
             ('interval', 'interval', 'value')
         )
         for aprop, widget, wprop in self.account_to_editor_map:
+            # Can't use get_property because of libindicate bug (LP#499490)
             self.ui.get_object(widget).set_property(wprop, getattr(acc.props, aprop))
         self.account_editor.set_data('account', acc)
         self.account_editor.show()
@@ -473,6 +476,7 @@ class PreferenceDialog(object):
             acc = self.account_editor.get_data('account')
             for aprop, id, wprop in self.account_to_editor_map:
                 w = self.ui.get_object(id)
+                # Can't use set_property because of libindicate bug (LP#499490)
                 setattr(acc.props, aprop, w.get_property(wprop))
         self.account_editor.hide()
 
@@ -560,7 +564,7 @@ class Notifier:
 
     def start_mail_checks(self):
         for acc in self.conf.get_accounts():
-            debug("Account: %s, enabled: %s" % (acc.email, acc.enabled))
+            debug("Account: %s, enabled: %s" % (acc.props.email, acc.props.enabled))
             if acc.enabled:
                 acc.connect("new-mail", self.notify)
                 acc.connect("auth-error", self.notify_error)
@@ -572,17 +576,17 @@ class Notifier:
     def notify(self, acc, count):
         str = "You have %d %s mail%s." % (count, self.first_check and "unread"
                                           or "new", count == 1 and "" or "s")
-        n = pynotify.Notification("Gmail Notifier - %s" % acc.email, str)
+        n = pynotify.Notification("Gmail Notifier - %s" % acc.props.email, str)
         n.show()
         self.first_check = False
 
     def notify_error(self, acc):
-        n = pynotify.Notification("Gmail Notifier - %s" % acc.email,
+        n = pynotify.Notification("Gmail Notifier - %s" % acc.props.email,
                                   "Unable to connect. Email or password may be wrong.")
         n.show()
 
     def account_enabled_cb(self, acc, prop):
-        debug('account %s has been %s' % (acc.email, acc.props.enabled and 'enabled' or 'disabled'))
+        debug('account %s has been %s' % (acc.props.email, acc.props.enabled and 'enabled' or 'disabled'))
 
     def destroy(self):
         self.server.hide()
