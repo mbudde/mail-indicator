@@ -109,6 +109,12 @@ class Account(indicate.Indicator):
             True,
             gobject.PARAM_READWRITE
         ),
+        'notifications': (
+            gobject.TYPE_BOOLEAN,
+            'should there pop up an notification when theres new mail', '',
+            True,
+            gobject.PARAM_READWRITE
+        ),
     }
 
     __gsignals__ = {
@@ -164,6 +170,7 @@ class Account(indicate.Indicator):
     def stop_check(self):
         gobejct.source_remove(self._event_id)
 
+    @debug_method
     def check_mail(self):
         if not self.enabled:
             return
@@ -324,12 +331,14 @@ class Config(gobject.GObject):
             setattr(self, '_'+pspec.name, val)
 
     def _init_account_from_gconf(self, path):
-        enabled    = self.gconf.get_bool("%s/enabled" % path)
-        email      = self.gconf.get_string("%s/email" % path)
-        interval   = self.gconf.get_int("%s/interval" % path)
-        auth_token = self.gconf.get_int("%s/auth_token" % path)
-        password   = self.keyring.get_password(auth_token)
-        account    = Account(email=email, password=password, interval=interval, enabled=enabled)
+        account = Account()
+        for pspec in account.props:
+            if pspec.name == 'password':
+                auth_token = self.gconf.get_value('%s/auth_token' % path)
+                account.props.password = self.keyring.get_password(auth_token)
+            else:
+                setattr(account.props, pspec.name,
+                        self.gconf.get_value('%s/%s' % (path, pspec.name)))
         account.connect('notify', self._prop_changed)
         return account
 
@@ -343,11 +352,12 @@ class Config(gobject.GObject):
 
     def save_account(self, account):
         path = "%s/accounts/%s" % (self.path, account.props.email)
-        self.gconf.set_bool("%s/enabled" % path, account.props.enabled)
-        self.gconf.set_string("%s/email" % path, account.props.email) 
-        self.gconf.set_int("%s/interval" % path, account.props.interval) 
-        auth_token = self.keyring.save_password(account.props.email, account.props.password)
-        self.gconf.set_int("%s/auth_token" % path, auth_token)
+        for pspec in account.props:
+            if pspec.name == 'password':
+                auth_token = self.keyring.save_password(account.props.email, account.props.password)
+                self.gconf.set_value('%s/auth_token' % path, auth_token)
+            self.gconf.set_value('%s/%s' % (path, pspec-name),
+                                 getattr(account.props, pspec.name))
         account.connect('notify', self._prop_changed)
         self._accounts.append(account)
 
@@ -360,13 +370,13 @@ class Config(gobject.GObject):
     @debug_method
     def _prop_changed(self, acc, pspec):
         debug('prop changed in %s' % acc.email)
-        if pspec.name in ('email', 'interval', 'enabled'):
+        if pspec.name == 'password':
+            self.keyring.save_password(acc.props.email, acc.props.password)
+        else:
             # Can't use get_property because of libindicate bug (LP#499490)
             self.gconf.set_value('%s/accounts/%s/%s' % (self.path, acc.props.email, pspec.name),
                                  getattr(acc.props, pspec.name))
                 
-        if pspec.name == 'password':
-            self.keyring.save_password(acc.props.email, acc.props.password)
 
     def open_pref_window(self):
         self._pref_dlg.show()
@@ -476,9 +486,11 @@ class PreferenceDialog(object):
 
     def open_account_editor(self, acc):
         self.account_to_editor_map = (
+            # account property, widget name, widget property
             ('email', 'email', 'text'),
             ('password', 'password', 'text'),
-            ('interval', 'interval', 'value')
+            ('interval', 'interval', 'value'),
+            ('notifications', 'notifications_enabled_account', 'active')
         )
         for aprop, widget, wprop in self.account_to_editor_map:
             # Can't use get_property because of libindicate bug (LP#499490)
@@ -489,6 +501,7 @@ class PreferenceDialog(object):
     def close_account_editor(self, w):
         if w.props.name == 'editor_ok':
             acc = self.account_editor.get_data('account')
+            # map is defined in open_account_editor
             for aprop, id, wprop in self.account_to_editor_map:
                 w = self.ui.get_object(id)
                 # Can't use set_property because of libindicate bug (LP#499490)
@@ -595,6 +608,8 @@ class Notifier:
         self.conf.open_pref_window()
 
     def notify(self, acc, count):
+        if not acc.props.notifications:
+            return
         word = self.first_check and 'Unread' or 'New'
         self.notification.props.summary = '%s mail' % (word)
         body = self.notification.props.body or ''
