@@ -130,77 +130,76 @@ class Account(indicate.Indicator):
         ),
     }
 
-    def __init__(self, email=None, password=None, interval=10, enabled=True):
+    def __init__(self):
         indicate.Indicator.__init__(self)
-        self.email = email
-        self.password = password
-        self.interval = interval
-        self.enabled = enabled
-        if email:
-            self.set_property('name', email)
         self.link = None
-        self.last_check = None
-        self.connect("user-display", self.clicked)
+        self._last_check = None
         self.set_property('subtype', 'mail')
-        self.req = None
+        self._req = None
         self.update_request()
 
     def do_get_property(self, pspec):
         try:
-            return getattr(self, pspec.name)
+            return getattr(self, '_'+pspec.name)
         except AttributeError:
             return pspec.default_value
 
+    @debug_method
     def do_set_property(self, pspec, value):
         if pspec.name == 'email':
             if value:
                 self.set_property('name', value)
         if pspec.name in ('password', 'email'):
             self.update_request()
-        setattr(self, pspec.name, value)
+        setattr(self, '_'+pspec.name, value)
 
+    @debug_method
     def update_request(self):
-        self.req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
-        self.req.add_header("Authorization", "Basic %s"
-                            % (base64.encodestring("%s:%s" % (self.email, self.password))[:-1]))
+        self._req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
+        self._req.add_header('Authorization', 'Basic %s'
+                             % (base64.encodestring('%s:%s' % (self.props.email, self.props.password))[:-1]))
 
     def start_check(self):
         self._event_id = gobject.timeout_add_seconds(self.interval*60, self.check_mail)
 
     def stop_check(self):
-        gobejct.source_remove(self._event_id)
+        gobject.source_remove(self._event_id)
 
     @debug_method
     def check_mail(self):
-        if not self.enabled:
-            return
-
-        debug("Check for new mail on %s" % self.email)
-        try:
-            atom = feedparser.parse(urllib2.urlopen(self.req).read())
-        except:
-            self.emit("auth-error")
-            #self.props.enabled = False
-            self.hide()
+        if not self.props.enabled:
+            debug('Account not enabled')
             return False
+
+        debug("Check for new mail on %s" % self._email)
+        atom = None
+        try:
+            atom = feedparser.parse(urllib2.urlopen(self._req).read())
+        except urllib2.HTTPError as e:
+            if e.code == 401:
+                self.emit("auth-error")
+                self.props.enabled = False
+                self.hide()
+                debug('Auth error')
+                return False
 
         new = 0
         for email in atom["entries"]:
             utctime = calendar.timegm(time.strptime(email["issued"], "%Y-%m-%dT%H:%M:%SZ"))
-            if not self.last_check or utctime > self.last_check:
+            if not self._last_check or utctime > self._last_check:
                 new += 1
         debug("%d new mails" % new)
         if new > 0:
             self.alert()
             self.show()
             self.emit("new-mail", new)
-        self.last_check = time.time()
+        self._last_check = time.time()
 
         count = atom["feed"]["fullcount"]
         self.set_property('count', count)
 
         self.link = atom["feed"]["links"][0]["href"] 
-        debug("Checking again in %d seconds" % self.interval)
+        debug("Checking again in %d minutes" % self._interval)
         return True
 
     def alert(self):
@@ -208,12 +207,6 @@ class Account(indicate.Indicator):
 
     def lower(self):
         self.set_property('draw-attention', 'false')
-
-    def clicked(self, indicator):
-        if self.link:
-            os.popen("gnome-open '%s' &" % (self.link))
-        self.lower()
-        self.hide()
 
 
 class Keyring:
@@ -369,7 +362,7 @@ class Config(gobject.GObject):
 
     @debug_method
     def _prop_changed(self, acc, pspec):
-        debug('prop changed in %s' % acc.email)
+        debug('prop changed in %s' % acc._email)
         if pspec.name == 'password':
             self.keyring.save_password(acc.props.email, acc.props.password)
         else:
@@ -598,14 +591,29 @@ class Notifier:
     def start_mail_checks(self):
         for acc in self.conf.get_accounts():
             debug("Account: %s, enabled: %s" % (acc.props.email, acc.props.enabled))
-            if acc.enabled:
-                acc.connect("new-mail", self.notify)
-                acc.connect("auth-error", self.notify_error)
-                acc.connect('notify::enabled', self.account_enabled_cb)
+            acc.connect('new-mail', self.notify)
+            acc.connect('auth-error', self.notify_error)
+            acc.connect('notify::enabled', self.account_enabled_cb)
+            acc.connect('user-display', self.account_clicked)
+            if acc.props.enabled:
+                acc.show()
                 acc.start_check()
 
     def clicked(self, server):
         self.conf.open_pref_window()
+
+    def account_clicked(self, acc):
+        if self.conf.props.mail_application == 'browser':
+            os.popen("gnome-open '%s' &" % getattr(acc, 'link', ''))
+        else:
+            command = self.conf.props.custom_app_exec
+            # Replace %U etc. with link
+            if '%' in command:
+                pos = command.find('%')
+                command = command[:pos] + "'%s'" % getattr(acc, 'link', '') + command[pos+2:]
+            os.popen(command + ' &')
+        acc.lower()
+        acc.hide()
 
     def notify(self, acc, count):
         if not acc.props.notifications:
@@ -629,7 +637,11 @@ class Notifier:
         self.first_check = False
 
     def account_enabled_cb(self, acc, prop):
-        debug('account %s has been %s' % (acc.props.email, acc.props.enabled and 'enabled' or 'disabled'))
+        debug('account %s has been %s' % (acc.props.email, acc._enabled and 'enabled' or 'disabled'))
+        if acc.props.enabled:
+            acc.start_check()
+        else:
+            acc.stop_check()
 
     def destroy(self):
         self.server.hide()
