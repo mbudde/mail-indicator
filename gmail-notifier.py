@@ -155,9 +155,9 @@ class Account(indicate.Indicator):
 
     @debug_method
     def update_request(self):
+        auth_string = base64.encodestring('%s:%s' % (self.props.email, self.props.password))[:-1]
         self._req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
-        self._req.add_header('Authorization', 'Basic %s'
-                             % (base64.encodestring('%s:%s' % (self.props.email, self.props.password))[:-1]))
+        self._req.add_header('Authorization', 'Basic %s' % auth_string)
 
     def start_check(self):
         self._event_id = gobject.timeout_add_seconds(self.interval*60, self.check_mail)
