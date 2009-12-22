@@ -293,10 +293,10 @@ class Config(gobject.GObject):
         gobject.GObject.__init__(self)
         self.gconf = gconf.client_get_default()
         self.path = path
+        self._init_properties_from_gconf()
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
         self._accounts = None
         self._pref_dlg = PreferenceDialog(self)
-        self._init_properties_from_gconf()
 
     def do_get_property(self, pspec):
         try:
