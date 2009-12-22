@@ -397,10 +397,6 @@ class PreferenceDialog(object):
                            [('text/uri-list', 0, 1)],
                            gtk.gdk.ACTION_COPY)
 
-    def get_widgets(self, *args):
-        return [self.ui.get_object(name) for name in args]
-
-    def show(self):
         prop2widget_map = {
             'notifications': 'enable_notifications_globally',
             'run-on-startup': 'run_on_startup',
@@ -420,7 +416,13 @@ class PreferenceDialog(object):
         self.set_app_display_from_data({
             'name': self.conf.props.custom_app_name,
             'icon': self.conf.props.custom_app_icon})
-        self.window.show()
+
+
+    def get_widgets(self, *args):
+        return [self.ui.get_object(name) for name in args]
+
+    def show(self):
+        self.window.present()
 
     def hide(self, *args):
         self.window.hide()
