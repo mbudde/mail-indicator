@@ -146,12 +146,12 @@ class Account(indicate.Indicator):
 
     @debug_method
     def do_set_property(self, pspec, value):
+        setattr(self, '_'+pspec.name, value)
         if pspec.name == 'email':
             if value:
                 self.set_property('name', value)
         if pspec.name in ('password', 'email'):
             self.update_request()
-        setattr(self, '_'+pspec.name, value)
 
     @debug_method
     def update_request(self):
