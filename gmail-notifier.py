@@ -576,6 +576,11 @@ class Notifier:
         self.server.show()
         self.first_check = True
         pynotify.init("GmailNotifier")
+        self.notification = pynotify.Notification('Unread mail', '',
+                                                  'notification-message-email')
+        self.error_notification = pynotify.Notification('Unable to connect', '',
+                                                        'notification-message-email')
+        self.notification.connect('closed', self.clear_notification)
 
     def start_mail_checks(self):
         for acc in self.conf.get_accounts():
@@ -590,16 +595,23 @@ class Notifier:
         self.conf.open_pref_window()
 
     def notify(self, acc, count):
-        str = "You have %d %s mail%s." % (count, self.first_check and "unread"
-                                          or "new", count == 1 and "" or "s")
-        n = pynotify.Notification("Gmail Notifier - %s" % acc.props.email, str)
-        n.show()
-        self.first_check = False
+        word = self.first_check and 'Unread' or 'New'
+        self.notification.props.summary = '%s mail' % (word)
+        body = self.notification.props.body or ''
+        body += '\nYou have %d %s mail%s at %s.' % \
+                (count, word.lower(), count == 1 and "" or "s", acc.props.email)
+        self.notification.props.body = body.lstrip()
+        self.notification.show()
 
     def notify_error(self, acc):
-        n = pynotify.Notification("Gmail Notifier - %s" % acc.props.email,
-                                  "Unable to connect. Email or password may be wrong.")
-        n.show()
+        body = 'An error was encountered while trying to check %s. '\
+               'Check email and password is correct.' % acc.props.email
+        self.error_notification.props.body = body                                       
+        self.error_notification.show()
+
+    def clear_notification(self, n):
+        self.notification.props.body = ''
+        self.first_check = False
 
     def account_enabled_cb(self, acc, prop):
         debug('account %s has been %s' % (acc.props.email, acc.props.enabled and 'enabled' or 'disabled'))
