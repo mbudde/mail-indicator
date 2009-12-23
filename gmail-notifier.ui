@@ -13,436 +13,206 @@
     </columns>
   </object>
   <object class="GtkWindow" id="prefs_window">
+    <property name="border_width">12</property>
     <property name="title" translatable="yes">Gmail Notifier</property>
     <property name="window_position">center</property>
     <child>
-      <object class="GtkAlignment" id="alignment1">
+      <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
-        <property name="top_padding">12</property>
-        <property name="bottom_padding">12</property>
-        <property name="left_padding">12</property>
-        <property name="right_padding">12</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">6</property>
         <child>
-          <object class="GtkVBox" id="vbox1">
+          <object class="GtkLabel" id="account_label">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">6</property>
+            <property name="xalign">0</property>
+            <property name="label" translatable="yes">Accounts</property>
+            <attributes>
+              <attribute name="weight" value="bold"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkAlignment" id="accounts_align">
+            <property name="visible">True</property>
+            <property name="bottom_padding">6</property>
+            <property name="left_padding">12</property>
             <child>
-              <object class="GtkLabel" id="account_label">
+              <object class="GtkVBox" id="vbox2">
                 <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Accounts</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkAlignment" id="accounts_align">
-                <property name="visible">True</property>
-                <property name="bottom_padding">6</property>
-                <property name="left_padding">12</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">6</property>
                 <child>
-                  <object class="GtkVBox" id="vbox2">
+                  <object class="GtkViewport" id="viewport1">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
-                    <property name="spacing">6</property>
+                    <property name="resize_mode">queue</property>
                     <child>
-                      <object class="GtkViewport" id="viewport1">
-                        <property name="visible">True</property>
-                        <property name="resize_mode">queue</property>
-                        <child>
-                          <object class="GtkScrolledWindow" id="scrolledwindow1">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="hscrollbar_policy">automatic</property>
-                            <property name="vscrollbar_policy">automatic</property>
-                            <child>
-                              <object class="GtkTreeView" id="account_treeview">
-                                <property name="width_request">300</property>
-                                <property name="height_request">100</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="model">account_store</property>
-                                <property name="headers_clickable">False</property>
-                                <property name="search_column">0</property>
-                                <child>
-                                  <object class="GtkTreeViewColumn" id="enabled_col">
-                                    <property name="title">Enabled</property>
-                                    <child>
-                                      <object class="GtkCellRendererToggle" id="enabled_cellrender">
-                                        <signal name="toggled" handler="account_enabled_toggle"/>
-                                      </object>
-                                      <attributes>
-                                        <attribute name="active">0</attribute>
-                                      </attributes>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="GtkTreeViewColumn" id="email_col">
-                                    <property name="resizable">True</property>
-                                    <property name="title">Email</property>
-                                    <property name="expand">True</property>
-                                    <property name="clickable">True</property>
-                                    <child>
-                                      <object class="GtkCellRendererText" id="email_cellrender"/>
-                                      <attributes>
-                                        <attribute name="text">1</attribute>
-                                      </attributes>
-                                    </child>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox1">
-                        <property name="visible">True</property>
-                        <child>
-                          <object class="GtkButton" id="add_account">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Add an account</property>
-                            <property name="relief">none</property>
-                            <signal name="clicked" handler="add_account"/>
-                            <child>
-                              <object class="GtkImage" id="image1">
-                                <property name="visible">True</property>
-                                <property name="stock">gtk-add</property>
-                                <property name="icon-size">1</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="remove_account">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Remove the selected account</property>
-                            <property name="relief">none</property>
-                            <signal name="clicked" handler="remove_account"/>
-                            <child>
-                              <object class="GtkImage" id="image2">
-                                <property name="visible">True</property>
-                                <property name="stock">gtk-remove</property>
-                                <property name="icon-size">1</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkHButtonBox" id="hbuttonbox3">
-                            <property name="visible">True</property>
-                            <property name="layout_style">end</property>
-                            <child>
-                              <object class="GtkButton" id="edit_account">
-                                <property name="label">gtk-edit</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">Edit selected account</property>
-                                <property name="use_stock">True</property>
-                                <signal name="clicked" handler="edit_account"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="position">2</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="reader_label">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Mail Reader</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkAlignment" id="reader_align">
-                <property name="visible">True</property>
-                <property name="bottom_padding">6</property>
-                <property name="left_padding">12</property>
-                <child>
-                  <object class="GtkVBox" id="vbox10">
-                    <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
-                    <property name="spacing">6</property>
-                    <child>
-                      <object class="GtkRadioButton" id="use_default_browser">
-                        <property name="label" translatable="yes">Open Gmail in the default web browser</property>
+                      <object class="GtkScrolledWindow" id="scrolledwindow1">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="generic_save_state"/>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox2">
-                        <property name="visible">True</property>
-                        <property name="spacing">12</property>
+                        <property name="hscrollbar_policy">automatic</property>
+                        <property name="vscrollbar_policy">automatic</property>
                         <child>
-                          <object class="GtkRadioButton" id="use_custom_application">
+                          <object class="GtkTreeView" id="account_treeview">
+                            <property name="width_request">300</property>
+                            <property name="height_request">100</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="draw_indicator">True</property>
-                            <property name="group">use_default_browser</property>
-                            <signal name="toggled" handler="use_custom_application_toggled"/>
+                            <property name="model">account_store</property>
+                            <property name="headers_clickable">False</property>
+                            <property name="search_column">0</property>
                             <child>
-                              <object class="GtkLabel" id="label10">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">Use a custom application:
-&lt;small&gt;&lt;i&gt;Drag an application laucher onto the icon&lt;/i&gt;&lt;/small&gt;</property>
-                                <property name="use_markup">True</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEventBox" id="application_icon_eb">
-                            <property name="visible">True</property>
-                            <signal name="drag_data_received" handler="drag_data_received"/>
-                            <child>
-                              <object class="GtkImage" id="application_icon">
-                                <property name="visible">True</property>
-                                <property name="sensitive">False</property>
-                                <property name="stock">gtk-dnd</property>
-                                <property name="icon-size">5</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="application_name">
-                            <property name="visible">True</property>
-                            <property name="sensitive">False</property>
-                            <property name="xalign">0</property>
-                            <property name="label" translatable="yes">No application set</property>
-                          </object>
-                          <packing>
-                            <property name="position">2</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="prefs_label">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Preferences</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">4</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkAlignment" id="prefs_align">
-                <property name="visible">True</property>
-                <property name="bottom_padding">12</property>
-                <property name="left_padding">12</property>
-                <child>
-                  <object class="GtkVBox" id="vbox3">
-                    <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkCheckButton" id="run_on_startup">
-                        <property name="label" translatable="yes">Run Gmail Notifier on startup</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="draw_indicator">True</property>
-                        <signal name="toggled" handler="run_on_startup_toggled"/>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkVBox" id="vbox7">
-                        <property name="visible">True</property>
-                        <property name="orientation">vertical</property>
-                        <child>
-                          <object class="GtkCheckButton" id="enable_notifications_globally">
-                            <property name="label" translatable="yes">Enable notifications</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                            <signal name="toggled" handler="enable_notifications_globally_toggled"/>
-                          </object>
-                          <packing>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkAlignment" id="alignment6">
-                            <property name="visible">True</property>
-                            <property name="left_padding">20</property>
-                            <child>
-                              <object class="GtkVBox" id="vbox9">
-                                <property name="visible">True</property>
-                                <property name="orientation">vertical</property>
+                              <object class="GtkTreeViewColumn" id="enabled_col">
+                                <property name="title">Enabled</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="notify_count">
-                                    <property name="label" translatable="yes">Show a notification with the number of new mails</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">False</property>
-                                    <property name="draw_indicator">True</property>
-                                    <signal name="toggled" handler="generic_save_state"/>
+                                  <object class="GtkCellRendererToggle" id="enabled_cellrender">
+                                    <signal name="toggled" handler="account_enabled_toggle"/>
                                   </object>
-                                  <packing>
-                                    <property name="position">0</property>
-                                  </packing>
+                                  <attributes>
+                                    <attribute name="active">0</attribute>
+                                  </attributes>
                                 </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="email_col">
+                                <property name="resizable">True</property>
+                                <property name="title">Email</property>
+                                <property name="expand">True</property>
+                                <property name="clickable">True</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="notify_email">
-                                    <property name="label" translatable="yes">Show a notification for each new email</property>
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">False</property>
-                                    <property name="draw_indicator">True</property>
-                                    <property name="group">notify_count</property>
-                                    <signal name="toggled" handler="generic_save_state"/>
-                                  </object>
-                                  <packing>
-                                    <property name="position">1</property>
-                                  </packing>
+                                  <object class="GtkCellRendererText" id="email_cellrender"/>
+                                  <attributes>
+                                    <attribute name="text">1</attribute>
+                                  </attributes>
                                 </child>
                               </object>
                             </child>
                           </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">1</property>
-                          </packing>
                         </child>
                       </object>
-                      <packing>
-                        <property name="position">1</property>
-                      </packing>
                     </child>
                   </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
                 </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">5</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkHBox" id="hbox4">
-                <property name="visible">True</property>
                 <child>
-                  <object class="GtkHButtonBox" id="about_bb">
+                  <object class="GtkHBox" id="hbox1">
                     <property name="visible">True</property>
-                    <property name="spacing">6</property>
                     <child>
-                      <object class="GtkButton" id="quit">
-                        <property name="label">gtk-quit</property>
+                      <object class="GtkButton" id="add_account">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="clicked" handler="quit"/>
+                        <property name="relief">none</property>
+                        <signal name="clicked" handler="add_account"/>
+                        <child>
+                          <object class="GtkImage" id="image1">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-add</property>
+                            <property name="icon-size">1</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="fill">False</property>
                         <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="about">
-                        <property name="label">gtk-about</property>
+                      <object class="GtkButton" id="remove_account">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="clicked" handler="show_aboutdialog"/>
+                        <property name="relief">none</property>
+                        <signal name="clicked" handler="remove_account"/>
+                        <child>
+                          <object class="GtkImage" id="image2">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-remove</property>
+                            <property name="icon-size">1</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="fill">False</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkHButtonBox" id="hbuttonbox3">
+                        <property name="visible">True</property>
+                        <property name="layout_style">end</property>
+                        <child>
+                          <object class="GtkButton" id="edit_account">
+                            <property name="label">gtk-edit</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="edit_account"/>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="reader_label">
+            <property name="visible">True</property>
+            <property name="xalign">0</property>
+            <property name="label" translatable="yes">Mail Reader</property>
+            <attributes>
+              <attribute name="weight" value="bold"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkAlignment" id="reader_align">
+            <property name="visible">True</property>
+            <property name="bottom_padding">6</property>
+            <property name="left_padding">12</property>
+            <child>
+              <object class="GtkVBox" id="vbox10">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkRadioButton" id="use_default_browser">
+                    <property name="label" translatable="yes">Open Gmail in the default web browser</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="active">True</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="generic_save_state"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -450,23 +220,170 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHButtonBox" id="main_bb">
+                  <object class="GtkHBox" id="hbox2">
                     <property name="visible">True</property>
-                    <property name="spacing">6</property>
-                    <property name="layout_style">end</property>
+                    <property name="spacing">12</property>
                     <child>
-                      <object class="GtkButton" id="close">
-                        <property name="label">gtk-close</property>
+                      <object class="GtkRadioButton" id="use_custom_application">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="clicked" handler="hide"/>
+                        <property name="receives_default">False</property>
+                        <property name="draw_indicator">True</property>
+                        <property name="group">use_default_browser</property>
+                        <signal name="toggled" handler="use_custom_application_toggled"/>
+                        <child>
+                          <object class="GtkLabel" id="label10">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Use a custom application:
+&lt;small&gt;&lt;i&gt;Drag an application laucher onto the icon&lt;/i&gt;&lt;/small&gt;</property>
+                            <property name="use_markup">True</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="fill">False</property>
                         <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEventBox" id="application_icon_eb">
+                        <property name="visible">True</property>
+                        <signal name="drag_data_received" handler="drag_data_received"/>
+                        <child>
+                          <object class="GtkImage" id="application_icon">
+                            <property name="visible">True</property>
+                            <property name="sensitive">False</property>
+                            <property name="stock">gtk-dnd</property>
+                            <property name="icon-size">5</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="application_name">
+                        <property name="visible">True</property>
+                        <property name="sensitive">False</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">No application set</property>
+                      </object>
+                      <packing>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="prefs_label">
+            <property name="visible">True</property>
+            <property name="xalign">0</property>
+            <property name="label" translatable="yes">Preferences</property>
+            <attributes>
+              <attribute name="weight" value="bold"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkAlignment" id="prefs_align">
+            <property name="visible">True</property>
+            <property name="bottom_padding">12</property>
+            <property name="left_padding">12</property>
+            <child>
+              <object class="GtkVBox" id="vbox3">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkCheckButton" id="run_on_startup">
+                    <property name="label" translatable="yes">Run Gmail Notifier on startup</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="run_on_startup_toggled"/>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkVBox" id="vbox7">
+                    <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkCheckButton" id="enable_notifications_globally">
+                        <property name="label" translatable="yes">Enable notifications</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="enable_notifications_globally_toggled"/>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkAlignment" id="alignment6">
+                        <property name="visible">True</property>
+                        <property name="left_padding">20</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox9">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkRadioButton" id="notify_count">
+                                <property name="label" translatable="yes">Show a notification with the number of new mails</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                                <signal name="toggled" handler="generic_save_state"/>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="notify_email">
+                                <property name="label" translatable="yes">Show a notification for each new email</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">notify_count</property>
+                                <signal name="toggled" handler="generic_save_state"/>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="position">1</property>
                       </packing>
                     </child>
                   </object>
@@ -475,12 +392,86 @@
                   </packing>
                 </child>
               </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox4">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkHButtonBox" id="about_bb">
+                <property name="visible">True</property>
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkButton" id="quit">
+                    <property name="label">gtk-quit</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="quit"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="about">
+                    <property name="label">gtk-about</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="show_aboutdialog"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="position">6</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHButtonBox" id="main_bb">
+                <property name="visible">True</property>
+                <property name="spacing">6</property>
+                <property name="layout_style">end</property>
+                <child>
+                  <object class="GtkButton" id="close">
+                    <property name="label">gtk-close</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="hide"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">6</property>
+          </packing>
         </child>
       </object>
     </child>
