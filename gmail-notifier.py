@@ -270,7 +270,7 @@ class Config(gobject.GObject):
         'mail-application': (
             gobject.TYPE_STRING,
             'Application to open when an inbox is clicked', '',
-            'browser', # 'browser' or 'custom'
+            'browser', # 'browser', 'custom' or 'none'
             gobject.PARAM_READWRITE
         ),
         'custom-app-name': (
@@ -318,7 +318,7 @@ class Config(gobject.GObject):
     @debug_method
     def do_set_property(self, pspec, value):
         if (pspec.name == 'notification-mode' and value not in ('count', 'email')) or \
-           (pspec.name == 'mail-application' and value not in ('browser', 'custom')):
+           (pspec.name == 'mail-application' and value not in ('browser', 'custom', 'none')):
             raise ValueError, 'invalid value `%s\' or property %s' % (value, pspec.name)
         setattr(self, '_'+pspec.name, value)
         self.gconf.set_value('%s/%s' % (self.path, pspec.name), value)
@@ -529,6 +529,7 @@ class PreferenceDialog(object):
             return
         save_map = (
             ('use_default_browser', 'mail-application', 'browser'),
+            ('only_clear_indicator', 'mail-application', 'none'),
             ('notify_count', 'notification-mode', 'count'),
             ('notify_email', 'notification-mode', 'email'),
         )
@@ -623,9 +624,10 @@ class Notifier:
         self.conf.open_pref_window()
 
     def account_clicked(self, acc):
-        if self.conf.props.mail_application == 'browser':
+        app = self.conf.props.mail_application
+        if app == 'browser':
             os.popen("gnome-open '%s' &" % getattr(acc, 'link', ''))
-        else:
+        elif app == 'custom':
             command = self.conf.props.custom_app_exec
             # Replace %U etc. with link
             if '%' in command:
