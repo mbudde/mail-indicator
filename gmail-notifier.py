@@ -133,9 +133,10 @@ class Account(indicate.Indicator):
     def __init__(self):
         indicate.Indicator.__init__(self)
         self.link = None
-        self._last_check = None
         self.set_property('subtype', 'mail')
+        self._last_check = None
         self._req = None
+        self._event_id = None
         self.update_request()
 
     def do_get_property(self, pspec):
@@ -167,7 +168,8 @@ class Account(indicate.Indicator):
         self._event_id = gobject.timeout_add_seconds(self.props.interval*60, self.check_mail)
 
     def stop_check(self):
-        gobject.source_remove(self._event_id)
+        if self._event_id:
+            gobject.source_remove(self._event_id)
 
     @debug_method
     def check_mail(self):
