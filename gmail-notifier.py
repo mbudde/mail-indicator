@@ -160,7 +160,9 @@ class Account(indicate.Indicator):
         self._req.add_header('Authorization', 'Basic %s' % auth_string)
 
     def start_check(self):
-        self._event_id = gobject.timeout_add_seconds(self.interval*60, self.check_mail)
+        self._event_id = gobject.timeout_add_seconds(self.props.interval*60, self.check_mail)
+        if DEBUG:
+            self.check_mail()
 
     def stop_check(self):
         gobject.source_remove(self._event_id)
