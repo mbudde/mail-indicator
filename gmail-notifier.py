@@ -186,6 +186,9 @@ class Account(indicate.Indicator):
                 self.hide()
                 debug('Auth error')
                 return False
+        except urllib2.URLError as e:
+            # Probably not connect to the internet. Try again later.
+            return True
 
         new = 0
         for email in atom["entries"]:
