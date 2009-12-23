@@ -193,16 +193,17 @@ class Account(indicate.Indicator):
             if not self._last_check or utctime > self._last_check:
                 new += 1
         debug("%d new mails" % new)
+        self._last_check = time.time()
+        count = atom["feed"]["fullcount"]
+        self.set_property('count', count)
         if new > 0:
             self.alert()
             self.show()
             self.emit("new-mail", new)
-        self._last_check = time.time()
-
-        count = atom["feed"]["fullcount"]
-        self.set_property('count', count)
-        if int(count) > 0:
+        elif int(count) > 0:
             self.show()
+        else:
+            self.hide()
 
         self.link = atom["feed"]["links"][0]["href"] 
         debug("Checking again in %d minutes" % self._interval)
@@ -629,7 +630,6 @@ class Notifier:
                 command = command[:pos] + "'%s'" % getattr(acc, 'link', '') + command[pos+2:]
             os.popen(command + ' &')
         acc.lower()
-        acc.hide()
 
     def notify(self, acc, count):
         if not acc.props.notifications:
