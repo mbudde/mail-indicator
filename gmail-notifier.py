@@ -201,6 +201,8 @@ class Account(indicate.Indicator):
 
         count = atom["feed"]["fullcount"]
         self.set_property('count', count)
+        if int(count) > 0:
+            self.show()
 
         self.link = atom["feed"]["links"][0]["href"] 
         debug("Checking again in %d minutes" % self._interval)
