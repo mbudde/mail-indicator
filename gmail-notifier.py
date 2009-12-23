@@ -152,6 +152,10 @@ class Account(indicate.Indicator):
                 self.set_property('name', value)
         if pspec.name in ('password', 'email'):
             self.update_request()
+        if pspec.name == 'interval':
+            self.stop_check()
+            self.start_check()
+            
 
     @debug_method
     def update_request(self):
@@ -161,8 +165,6 @@ class Account(indicate.Indicator):
 
     def start_check(self):
         self._event_id = gobject.timeout_add_seconds(self.props.interval*60, self.check_mail)
-        if DEBUG:
-            self.check_mail()
 
     def stop_check(self):
         gobject.source_remove(self._event_id)
@@ -608,6 +610,8 @@ class Notifier:
             if acc.props.enabled:
                 acc.show()
                 acc.start_check()
+                if DEBUG:
+                    acc.check_mail()
 
     def clicked(self, server):
         self.conf.open_pref_window()
