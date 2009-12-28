@@ -51,15 +51,20 @@ class PreferenceDialog(object):
                            [('text/uri-list', 0, 1)],
                            gtk.gdk.ACTION_COPY)
 
-        prop2widget_map = {
+        self.prop2widget_map = {
             'notifications': 'enable_notifications_globally',
             'run-on-startup': 'run_on_startup',
-            'notification-mode': [('count', 'notify_count'),
-                                  ('mail', 'notify_each_mail')],
-            'mail-application': [('browser', 'use_default_browser'),
-                                 ('custom', 'use_custom_application')],
+            'notification-mode': [
+                ('count', 'notify_count'),
+                ('email', 'notify_email')
+            ],
+            'mail-application': [
+                ('browser', 'use_default_browser'),
+                ('custom', 'use_custom_application'),
+                ('none', 'only_clear_indicator')
+            ],
         }
-        for prop, widget in prop2widget_map.iteritems():
+        for prop, widget in self.prop2widget_map.iteritems():
             if type(widget) == str:
                 self.ui.get_object(widget).props.active = self.conf.get_property(prop)
             elif type(widget) == list:
@@ -163,18 +168,17 @@ class PreferenceDialog(object):
         entry.grab_focus()
 
     def generic_save_state(self, w):
-        if not w.props.active:
-            return
-        save_map = (
-            ('use_default_browser', 'mail-application', 'browser'),
-            ('only_clear_indicator', 'mail-application', 'none'),
-            ('notify_count', 'notification-mode', 'count'),
-            ('notify_email', 'notification-mode', 'email'),
-        )
-        for name, prop, val in save_map:
-            if w.name == name:
-                self.conf.set_property(prop, val)
-                break
+        for prop, widget in self.prop2widget_map.iteritems():
+            if type(widget) == str and widget == w.name:
+                self.conf.set_property(prop, w.props.active)
+            elif type(widget) == list:
+                # Toggle, only let the active one through
+                if not w.props.active:
+                    return
+                for item in widget:
+                    val, radio = item
+                    if radio == w.name:
+                        self.conf.set_property(prop, val)
 
     def run_on_startup_toggled(self, w):
         self.conf.props.run_on_startup = w.props.active
@@ -183,14 +187,13 @@ class PreferenceDialog(object):
         active = w.props.active
         for child in self.get_widgets('notify_count', 'notify_email'):
             child.props.sensitive = active
-        self.conf.props.notifications = active
+        self.generic_save_state(w)
 
     def use_custom_application_toggled(self, w):
         active = w.props.active
         for child in self.get_widgets('application_icon', 'application_icon_eb', 'application_name'):
             child.props.sensitive = active
-        if active:
-            self.conf.props.mail_application = 'custom'
+        self.generic_save_state(w)
 
     def drag_data_received(self, w, context, x, y, data, info, time):
         app_data = self.get_data_from_desktop_file(data.get_uris()[0])
