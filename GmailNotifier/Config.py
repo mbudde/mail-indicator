@@ -25,6 +25,12 @@ from Utils import debug, debug_method
 
 
 class Config(gobject.GObject):
+    """Class containing program preferences.
+
+    Config automatically saves and loads its properties to/from GConf.
+    Config also takes care of loading Accounts from GConf and saving
+    their properties when they change.
+    """
 
     __gproperties__ = {
         'notifications': (
@@ -101,27 +107,8 @@ class Config(gobject.GObject):
         setattr(self, '_'+pspec.name, value)
         self.gconf.set_value('%s/%s' % (self.path, pspec.name), value)
 
-    def _init_properties_from_gconf(self):
-        for pspec in self.props:
-            path = '%s/%s' % (self.path, pspec.name)
-            try:
-                val = self.gconf.get_value(path)
-            except ValueError:
-                val = pspec.default_value
-                self.gconf.set_value(path, val)
-            setattr(self, '_'+pspec.name, val)
-
-    def _init_account_from_gconf(self, path):
-        account = Account()
-        for pspec in account.props:
-            if pspec.name == 'password':
-                auth_token = self.gconf.get_value('%s/auth_token' % path)
-                account.props.password = self.keyring.get_password(auth_token)
-            else:
-                setattr(account.props, pspec.name,
-                        self.gconf.get_value('%s/%s' % (path, pspec.name)))
-        account.connect('notify', self._prop_changed)
-        return account
+    def open_pref_window(self):
+        self._pref_dlg.show()
 
     def get_accounts(self):
         if self._accounts == None:
@@ -139,7 +126,7 @@ class Config(gobject.GObject):
                 self.gconf.set_value('%s/auth_token' % path, auth_token)
             self.gconf.set_value('%s/%s' % (path, pspec-name),
                                  getattr(account.props, pspec.name))
-        account.connect('notify', self._prop_changed)
+        account.connect('notify', self._account_prop_changed)
         self._accounts.append(account)
 
     def remove_account(self, account):
@@ -148,8 +135,33 @@ class Config(gobject.GObject):
         # disconnect from notify signal
         self._accounts.remove(account)
 
+    def _init_properties_from_gconf(self):
+        """Set Config properties from GConf."""
+        for pspec in self.props:
+            path = '%s/%s' % (self.path, pspec.name)
+            try:
+                val = self.gconf.get_value(path)
+            except ValueError:
+                val = pspec.default_value
+                self.gconf.set_value(path, val)
+            setattr(self, '_'+pspec.name, val)
+
+    def _init_account_from_gconf(self, path):
+        """Setup an Account class with values from GConf."""
+        account = Account()
+        for pspec in account.props:
+            if pspec.name == 'password':
+                auth_token = self.gconf.get_value('%s/auth_token' % path)
+                account.props.password = self.keyring.get_password(auth_token)
+            else:
+                setattr(account.props, pspec.name,
+                        self.gconf.get_value('%s/%s' % (path, pspec.name)))
+        account.connect('notify', self._account_prop_changed)
+        return account
+
     @debug_method
-    def _prop_changed(self, acc, pspec):
+    def _account_prop_changed(self, acc, pspec):
+        """Called when an Account property is changed. Save the property to GConf. """
         debug('prop changed in %s' % acc._email)
         if pspec.name == 'password':
             self.keyring.save_password(acc.props.email, acc.props.password)
@@ -158,7 +170,4 @@ class Config(gobject.GObject):
             self.gconf.set_value('%s/accounts/%s/%s' % (self.path, acc.props.email, pspec.name),
                                  getattr(acc.props, pspec.name))
                 
-
-    def open_pref_window(self):
-        self._pref_dlg.show()
 
