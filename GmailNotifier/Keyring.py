@@ -17,6 +17,7 @@
 import gnomekeyring
 
 class Keyring(object):
+    """Interface between Config and Gnome Keyring."""
 
     def __init__(self, app_name, app_desc):
         self.keyring = gnomekeyring.get_default_keyring_sync()
