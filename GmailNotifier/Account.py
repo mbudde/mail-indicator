@@ -86,6 +86,7 @@ class Account(indicate.Indicator):
     def __init__(self, email):
         indicate.Indicator.__init__(self)
         self._email = email
+        self.set_property('name', email)
         self.link = 'http://gmail.com'
         self.set_property('subtype', 'mail')
         self._last_check = None
@@ -102,13 +103,11 @@ class Account(indicate.Indicator):
     @debug_method
     def do_set_property(self, pspec, value):
         setattr(self, '_'+pspec.name, value)
-        if pspec.name == 'email':
-            if value:
-                self.set_property('name', value)
         if pspec.name in ('password', 'email'):
             self.update_request()
         if pspec.name == 'interval':
-            self.start_check(force=True)
+            if self._event_id:
+                self.start_check(force=True)
 
     @debug_method
     def update_request(self):
