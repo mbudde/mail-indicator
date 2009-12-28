@@ -118,16 +118,22 @@ class Config(gobject.GObject):
                 self._accounts.append(self._init_account_from_gconf(path))
         return self._accounts
 
+    @debug_method
     def save_account(self, account):
+        for acc in self._accounts:
+            if acc.props.email == account.props.email:
+                return False
         path = "%s/accounts/%s" % (self.path, account.props.email)
         for pspec in account.props:
             if pspec.name == 'password':
                 auth_token = self.keyring.save_password(account.props.email, account.props.password)
-                self.gconf.set_value('%s/auth_token' % path, auth_token)
-            self.gconf.set_value('%s/%s' % (path, pspec-name),
-                                 getattr(account.props, pspec.name))
+                self.gconf.set_int('%s/auth_token' % path, auth_token)
+            else:
+                self.gconf.set_value('%s/%s' % (path, pspec.name),
+                                     getattr(account.props, pspec.name))
         account.connect('notify', self._account_prop_changed)
         self._accounts.append(account)
+        return True
 
     def remove_account(self, account):
         path = os.path.join(self.path, "accounts", account.props.email)
@@ -148,12 +154,13 @@ class Config(gobject.GObject):
 
     def _init_account_from_gconf(self, path):
         """Setup an Account class with values from GConf."""
-        account = Account()
+        email = self.gconf.get_value('%s/email' % path)
+        account = Account(email)
         for pspec in account.props:
             if pspec.name == 'password':
                 auth_token = self.gconf.get_value('%s/auth_token' % path)
                 account.props.password = self.keyring.get_password(auth_token)
-            else:
+            elif pspec.name != 'email':
                 setattr(account.props, pspec.name,
                         self.gconf.get_value('%s/%s' % (path, pspec.name)))
         account.connect('notify', self._account_prop_changed)

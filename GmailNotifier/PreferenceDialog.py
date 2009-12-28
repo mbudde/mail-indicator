@@ -20,6 +20,8 @@ import gio
 import Utils
 import info
 
+from Account import Account
+
 class PreferenceDialog(object):
 
     COL_ENABLED, COL_EMAIL, COL_ACCOUNT = range(3)
@@ -109,11 +111,7 @@ class PreferenceDialog(object):
         return model.get_value(iter, self.COL_ACCOUNT)
 
     def add_account(self, w):
-        acc = Account()
-        if self.open_account_editor(acc):
-            return
-        self.account_store.append((acc.props.enabled, acc.props.email, acc))
-        self.conf.save_account(acc)
+        self.open_account_editor(new=True)
 
     def remove_account(self, w):
         # TODO
@@ -138,7 +136,7 @@ class PreferenceDialog(object):
         if state != acc.props.enabled:
             model[path][self.COL_ENABLED] = acc.props.enabled
 
-    def open_account_editor(self, acc):
+    def open_account_editor(self, acc=None, new=False):
         self.account_to_editor_map = (
             # account property, widget name, widget property
             ('email', 'email', 'text'),
@@ -146,18 +144,46 @@ class PreferenceDialog(object):
             ('interval', 'interval', 'value'),
             ('notifications', 'notifications_enabled_account', 'active')
         )
-        for aprop, widget, wprop in self.account_to_editor_map:
-            self.ui.get_object(widget).set_property(wprop, getattr(acc.props, aprop))
-        self.account_editor.set_data('account', acc)
+        if new:
+            self.ui.get_object('email').props.sensitive = True
+            self.ui.get_object('email_help').props.visible = True
+            self.ui.get_object('account_table').props.row_spacing = 0
+            map = (
+                ('email', 'text', ''),
+                ('password', 'text', ''),
+                ('interval', 'value', 10),
+                ('notifications_enabled_account', 'active', True)
+            )
+            for w, prop, default in map:
+                self.ui.get_object(w).set_property(prop, default)
+        else:
+            self.ui.get_object('email').props.sensitive = False
+            self.ui.get_object('email_help').props.visible = False
+            self.ui.get_object('account_table').props.row_spacing = 3
+            for aprop, widget, wprop in self.account_to_editor_map:
+                self.ui.get_object(widget).set_property(wprop, getattr(acc.props, aprop))
+            self.account_editor.set_data('account', acc)
+        self.account_editor.set_data('new', new)
         self.account_editor.show()
 
     def close_account_editor(self, w):
+        new = self.account_editor.get_data('new')
         if w.props.name == 'editor_ok':
-            acc = self.account_editor.get_data('account')
+            if new:
+                acc = Account(self.ui.get_object('email').props.text)
+            else:
+                acc = self.account_editor.get_data('account')
             # map is defined in open_account_editor
             for aprop, id, wprop in self.account_to_editor_map:
+                if id == 'email': continue
                 w = self.ui.get_object(id)
                 setattr(acc.props, aprop, w.get_property(wprop))
+            if new:
+                if self.conf.save_account(acc):
+                    self.account_store.append((acc.props.enabled, acc.props.email, acc))
+                else:
+                    # TODO: inform user that the account already exists
+                    pass
         self.account_editor.hide()
 
     def clear_password(self, w):

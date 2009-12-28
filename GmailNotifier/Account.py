@@ -39,7 +39,7 @@ class Account(indicate.Indicator):
             gobject.TYPE_STRING,
             'Gmail address', '',
             None, # default
-            gobject.PARAM_READWRITE
+            gobject.PARAM_READABLE
         ),
         'password': (
             gobject.TYPE_STRING,
@@ -83,8 +83,9 @@ class Account(indicate.Indicator):
         ),
     }
 
-    def __init__(self):
+    def __init__(self, email):
         indicate.Indicator.__init__(self)
+        self._email = email
         self.link = 'http://gmail.com'
         self.set_property('subtype', 'mail')
         self._last_check = None

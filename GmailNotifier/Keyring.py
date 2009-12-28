@@ -16,6 +16,8 @@
 
 import gnomekeyring
 
+from Utils import debug_method
+
 class Keyring(object):
     """Interface between Config and Gnome Keyring."""
 
@@ -33,6 +35,7 @@ class Keyring(object):
                 pass
         return password
 
+    @debug_method
     def save_password(self, email, password):
         auth_token = gnomekeyring.item_create_sync(
             self.keyring,
