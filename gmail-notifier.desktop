@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Gmail Notifier
+Icon=evolution
+Type=Application
+Categories=Network;
+Exec=gmail-notifier.py
+StartupNotify=False
+Terminal=false
