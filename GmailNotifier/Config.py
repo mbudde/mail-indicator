@@ -139,6 +139,8 @@ class Config(gobject.GObject):
 
     def remove_account(self, account):
         path = '%s/accounts/%s' % (self.path, account.props.email)
+        auth_token = self.gconf.get_int('%s/auth_token' % path)
+        self.keyring.remove_password(auth_token)
         self.gconf.recursive_unset(path, 1)
         self.gconf.suggest_sync()
         hid = self._account_hid[account.props.email]

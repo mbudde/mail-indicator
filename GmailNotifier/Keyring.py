@@ -35,7 +35,6 @@ class Keyring(object):
                 pass
         return password
 
-    @debug_method
     def save_password(self, email, password):
         auth_token = gnomekeyring.item_create_sync(
             self.keyring,
@@ -45,4 +44,7 @@ class Keyring(object):
             password,
             True)
         return auth_token
+
+    def remove_password(self, auth_token):
+        return gnomekeyring.item_delete_sync(self.keyring, auth_token)
 
