@@ -90,6 +90,7 @@ class Config(gobject.GObject):
         self._init_properties_from_gconf()
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
         self._accounts = None
+        self._account_hid = {}
         self._pref_dlg = PreferenceDialog(self)
 
     @debug_method
@@ -115,7 +116,7 @@ class Config(gobject.GObject):
             paths = self.gconf.all_dirs('%s/accounts' % self.path)
             self._accounts = []
             for path in paths:
-                self._accounts.append(self._init_account_from_gconf(path))
+                self._init_account_from_gconf(path)
         return self._accounts
 
     @debug_method
@@ -131,14 +132,18 @@ class Config(gobject.GObject):
             else:
                 self.gconf.set_value('%s/%s' % (path, pspec.name),
                                      getattr(account.props, pspec.name))
-        account.connect('notify', self._account_prop_changed)
+        self._account_hid[account.props.email] = \
+                account.connect('notify', self._account_prop_changed)
         self._accounts.append(account)
         return True
 
     def remove_account(self, account):
-        path = os.path.join(self.path, "accounts", account.props.email)
-        self.gconf.recursive_unset(path, 0)
-        # disconnect from notify signal
+        path = '%s/accounts/%s' % (self.path, account.props.email)
+        self.gconf.recursive_unset(path, 1)
+        self.gconf.suggest_sync()
+        hid = self._account_hid[account.props.email]
+        account.disconnect(hid)
+        del self._account_hid[account.props.email]
         self._accounts.remove(account)
 
     def _init_properties_from_gconf(self):
@@ -163,7 +168,9 @@ class Config(gobject.GObject):
             elif pspec.name != 'email':
                 setattr(account.props, pspec.name,
                         self.gconf.get_value('%s/%s' % (path, pspec.name)))
-        account.connect('notify', self._account_prop_changed)
+        self._account_hid[account.props.email] = \
+                account.connect('notify', self._account_prop_changed)
+        self._accounts.append(account)
         return account
 
     @debug_method

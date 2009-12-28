@@ -114,8 +114,14 @@ class PreferenceDialog(object):
         self.open_account_editor(new=True)
 
     def remove_account(self, w):
-        # TODO
-        pass
+        treesel = self.account_treeview.get_selection()
+        model, iter = treesel.get_selected()
+        if not iter:
+            return None
+        acc = model.get_value(iter, self.COL_ACCOUNT)
+        if acc:
+            self.conf.remove_account(acc)
+        del self.account_store[iter]
 
     def edit_account(self, w):
         acc = self.get_account_selection()
