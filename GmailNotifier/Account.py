@@ -27,6 +27,12 @@ import feedparser
 from Utils import debug, debug_method
 
 class Account(indicate.Indicator):
+    """Account inbox indicator showing in the MessageingMenu.
+    
+    Warning: Use Account.props to set Account properties and
+    Account.{get,set}_property to set Indicator properties.
+    See https://bugs.launchpad.net/libindicate/+bug/499490
+    """
 
     __gproperties__ = {
         'email': (
@@ -79,7 +85,7 @@ class Account(indicate.Indicator):
 
     def __init__(self):
         indicate.Indicator.__init__(self)
-        self.link = None
+        self.link = 'http://gmail.com'
         self.set_property('subtype', 'mail')
         self._last_check = None
         self._req = None
@@ -101,9 +107,7 @@ class Account(indicate.Indicator):
         if pspec.name in ('password', 'email'):
             self.update_request()
         if pspec.name == 'interval':
-            self.stop_check()
-            self.start_check()
-            
+            self.start_check(force=True)
 
     @debug_method
     def update_request(self):
@@ -111,8 +115,14 @@ class Account(indicate.Indicator):
         self._req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
         self._req.add_header('Authorization', 'Basic %s' % auth_string)
 
-    def start_check(self):
+    def start_check(self, force=False):
+        if self._event_id:
+            if force:
+                self.stop_check()
+            else:
+                return False
         self._event_id = gobject.timeout_add_seconds(self.props.interval*60, self.check_mail)
+        return True
 
     def stop_check(self):
         if self._event_id:
@@ -120,6 +130,12 @@ class Account(indicate.Indicator):
 
     @debug_method
     def check_mail(self):
+        """Check for new mail on the account if it is enabled.
+        
+        If new mail is found a `new-mail` signal is emitted. If an
+        authentication error is encountered, the `auth-error` signal is
+        emitted.
+        """
         if not self.props.enabled:
             debug('Account not enabled')
             return False
@@ -130,9 +146,9 @@ class Account(indicate.Indicator):
             atom = feedparser.parse(urllib2.urlopen(self._req).read())
         except urllib2.HTTPError as e:
             if e.code == 401:
-                self.emit("auth-error")
                 self.props.enabled = False
                 self.hide()
+                self.emit("auth-error")
                 debug('Auth error')
                 return False
         except urllib2.URLError as e:
