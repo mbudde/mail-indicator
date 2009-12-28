@@ -76,7 +76,6 @@ class PreferenceDialog(object):
             'name': self.conf.props.custom_app_name,
             'icon': self.conf.props.custom_app_icon})
 
-
     def get_widgets(self, *args):
         return [self.ui.get_object(name) for name in args]
 
@@ -117,6 +116,7 @@ class PreferenceDialog(object):
         self.conf.save_account(acc)
 
     def remove_account(self, w):
+        # TODO
         pass
 
     def edit_account(self, w):
@@ -147,7 +147,6 @@ class PreferenceDialog(object):
             ('notifications', 'notifications_enabled_account', 'active')
         )
         for aprop, widget, wprop in self.account_to_editor_map:
-            # Can't use get_property because of libindicate bug (LP#499490)
             self.ui.get_object(widget).set_property(wprop, getattr(acc.props, aprop))
         self.account_editor.set_data('account', acc)
         self.account_editor.show()
@@ -158,7 +157,6 @@ class PreferenceDialog(object):
             # map is defined in open_account_editor
             for aprop, id, wprop in self.account_to_editor_map:
                 w = self.ui.get_object(id)
-                # Can't use set_property because of libindicate bug (LP#499490)
                 setattr(acc.props, aprop, w.get_property(wprop))
         self.account_editor.hide()
 
