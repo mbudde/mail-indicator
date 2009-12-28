@@ -39,7 +39,8 @@ def debug_fun(fun):
 
 def debug_method(fun):
     def dbg_fun(klass, *args, **kwargs):
+        print '%s.%s ( %s %s )' % (klass.__class__, fun.__name__, args, kwargs)
         res = fun(klass, *args, **kwargs)
-        print '%s.%s ( %s %s ) -> %s' % (klass.__class__, fun.__name__, args, kwargs, res)
+        print '%s.%s -> %s' % (klass.__class__, fun.__name__, res)
         return res
     return dbg_fun
