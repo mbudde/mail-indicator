@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+try:
+    import GmailNotifier.Main
+except ImportError:
+    path = os.path.join(os.path.dirname(__file__), '..', 'share', 'gmail-notifier')
+    sys.path.insert(0, path)
+    import GmailNotifier.Main
+
+if __name__ == '__main__':
+    GmailNotifier.Main.main()

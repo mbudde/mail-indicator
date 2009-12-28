@@ -47,12 +47,9 @@ import calendar
 import gconf
 import gnomekeyring
 
+import Utils
 
-if __name__ == "__main__" :
-    if len(sys.argv) > 1 and sys.argv[1] == "debug":
-        DEBUG = True
-    else:
-        DEBUG = False
+DEBUG = True
 
 GCONF_PATH = "/apps/gmail-notifier"
 
@@ -396,7 +393,7 @@ class PreferenceDialog(object):
         ui = gtk.Builder()
         self.ui = ui
         # TODO: path handling
-        ui.add_from_file('gmail-notifier.ui')
+        ui.add_from_file(Utils.get_data_file('gmail-notifier.ui'))
         self.window = ui.get_object('prefs_window')
         self.account_editor = ui.get_object('account_editor')
         self.account_store = ui.get_object('account_store')
@@ -670,19 +667,11 @@ class Notifier:
         self.server.hide()
 
 
-class GmailNotifier:
-
-    def __init__(self):
-        conf = Config(GCONF_PATH)
-        notifier = Notifier(conf)
-        notifier.start_mail_checks()
-        try:
-            gtk.main()
-        except KeyboardInterrupt:
-            notifier.destroy()
-
-
-if __name__ == "__main__" :
-    if len(sys.argv) > 1 and sys.argv[1] == "debug":
-        DEBUG = True
-    GmailNotifier()
+def main():
+    conf = Config(GCONF_PATH)
+    notifier = Notifier(conf)
+    notifier.start_mail_checks()
+    try:
+        gtk.main()
+    except KeyboardInterrupt:
+        notifier.destroy()
