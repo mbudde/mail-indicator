@@ -22,9 +22,19 @@ import info
 
 from Account import Account
 
+_pref_instance = None
+
 class PreferenceDialog(object):
 
     COL_ENABLED, COL_EMAIL, COL_ACCOUNT = range(3)
+
+    @classmethod
+    def open(cls, conf):
+        global _pref_instance
+        if not _pref_instance:
+            _pref_instance = cls(conf)
+        _pref_instance.show()
+
 
     def __init__(self, conf):
         self.conf = conf
@@ -259,3 +269,4 @@ class PreferenceDialog(object):
             pixbuf = gtk.icon_theme_get_default().load_icon(
                 'gnome-panel-launcher', 32, gtk.ICON_LOOKUP_USE_BUILTIN)
         icon.set_from_pixbuf(pixbuf)
+

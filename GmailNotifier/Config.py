@@ -91,7 +91,6 @@ class Config(gobject.GObject):
         self.keyring = Keyring("Gmail Notifier", "A simple Gmail Notifier")
         self._accounts = None
         self._account_hid = {}
-        self._pref_dlg = PreferenceDialog(self)
 
     @debug_method
     def do_get_property(self, pspec):
@@ -109,7 +108,7 @@ class Config(gobject.GObject):
         self.gconf.set_value('%s/%s' % (self.path, pspec.name), value)
 
     def open_pref_window(self):
-        self._pref_dlg.show()
+        PreferenceDialog.open(self)
 
     def get_accounts(self):
         if self._accounts == None:
