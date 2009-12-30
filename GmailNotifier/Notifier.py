@@ -32,17 +32,17 @@ class Notifier(object):
     def __init__(self, conf):
         self.conf = conf
         self.server = indicate.indicate_server_ref_default()
-        self.server.set_type("message.mail")
+        self.server.set_type('message.mail')
         desktop_file = get_desktop_file(self.DESKTOP_FILE_NAME)
         if not desktop_file:
             raise Exception('Could not find desktop file `{0}`'.format(self.DESKTOP_FILE_NAME))
         self.server.set_desktop_file(desktop_file)
-        self.server.connect("server-display", self._clicked)
+        self.server.connect('server-display', self._clicked)
         self.server.show()
         self.first_check = True
 
         # Setup notifications
-        pynotify.init("GmailNotifier")
+        pynotify.init('GmailNotifier')
         self.notification = \
                 pynotify.Notification('Unread mail', '', 'notification-message-email')
         self.error_notification = \

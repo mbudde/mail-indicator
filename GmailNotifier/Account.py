@@ -109,7 +109,7 @@ class Account(indicate.Indicator):
     @debug_method
     def update_request(self):
         auth_string = base64.encodestring('{0}:{1}'.format(self.props.email, self.props.password))[:-1]
-        self._req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
+        self._req = urllib2.Request('https://mail.google.com/mail/feed/atom/')
         self._req.add_header('Authorization', 'Basic ' + auth_string)
 
     def start_check(self, force=False):
@@ -137,7 +137,7 @@ class Account(indicate.Indicator):
             debug('Account not enabled')
             return False
 
-        debug("Check for new mail on {0}".format(self._email))
+        debug('Check for new mail on {0}'.format(self._email))
         atom = None
         try:
             atom = feedparser.parse(urllib2.urlopen(self._req).read())
@@ -145,7 +145,7 @@ class Account(indicate.Indicator):
             if e.code == 401:
                 self.props.enabled = False
                 self.hide()
-                self.emit("auth-error")
+                self.emit('auth-error')
                 debug('Auth error')
                 return False
         except urllib2.URLError as e:
@@ -153,13 +153,13 @@ class Account(indicate.Indicator):
             return True
 
         new_mails = []
-        for email in atom["entries"]:
-            utctime = calendar.timegm(time.strptime(email["issued"], "%Y-%m-%dT%H:%M:%SZ"))
+        for email in atom['entries']:
+            utctime = calendar.timegm(time.strptime(email['issued'], '%Y-%m-%dT%H:%M:%SZ'))
             if not self._last_check or utctime > self._last_check:
                 new_mails.append((email['author_detail']['name'], email['title'], email['summary']))
-        debug("{0} new mails".format(len(new_mails)))
+        debug('{0} new mails'.format(len(new_mails)))
         self._last_check = time.time()
-        count = atom["feed"]["fullcount"]
+        count = atom['feed']['fullcount']
         self.set_property('count', count)
         if len(new_mails) > 0:
             if not self._first_check:
@@ -167,14 +167,14 @@ class Account(indicate.Indicator):
             else:
                 self._first_check = False
             self.show()
-            self.emit("new-mail", new_mails)
+            self.emit('new-mail', new_mails)
         elif int(count) > 0:
             self.show()
         else:
             self.hide()
 
-        self.link = atom["feed"]["links"][0]["href"] 
-        debug("Checking again in {0} minutes".format(self._interval))
+        self.link = atom['feed']['links'][0]['href'] 
+        debug('Checking again in {0} minutes'.format(self._interval))
         return True
 
     def alert(self):
