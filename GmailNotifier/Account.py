@@ -72,14 +72,10 @@ class Account(indicate.Indicator):
 
     __gsignals__ = {
         'new-mail': (
-            gobject.SIGNAL_RUN_LAST,
-            gobject.TYPE_NONE,
-            (gobject.TYPE_INT,)
+            gobject.SIGNAL_RUN_LAST, None, (object,)
         ),
         'auth-error': (
-            gobject.SIGNAL_RUN_LAST,
-            gobject.TYPE_NONE,
-            ()
+            gobject.SIGNAL_RUN_LAST, None, ()
         ),
     }
 
@@ -156,22 +152,22 @@ class Account(indicate.Indicator):
             # Probably not connect to the internet. Try again later.
             return True
 
-        new = 0
+        new_mails = []
         for email in atom["entries"]:
             utctime = calendar.timegm(time.strptime(email["issued"], "%Y-%m-%dT%H:%M:%SZ"))
             if not self._last_check or utctime > self._last_check:
-                new += 1
-        debug("%d new mails" % new)
+                new_mails.append((email['author_detail']['name'], email['title'], email['summary']))
+        debug("%d new mails" % len(new_mails))
         self._last_check = time.time()
         count = atom["feed"]["fullcount"]
         self.set_property('count', count)
-        if new > 0:
+        if len(new_mails) > 0:
             if not self._first_check:
                 self.alert()
             else:
                 self._first_check = False
             self.show()
-            self.emit("new-mail", new)
+            self.emit("new-mail", new_mails)
         elif int(count) > 0:
             self.show()
         else:

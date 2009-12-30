@@ -1,3 +1,4 @@
+# encoding: utf-8
 #
 # Copyright (C) 2009  Michael Budde <mbudde@gmail.com>
 #
@@ -64,16 +65,24 @@ class Notifier(object):
                 # TODO: Make non-blocking
                 acc.check_mail()
 
-    def notify_mail(self, acc, count):
+    def notify_mail(self, acc, mails):
         if not acc.props.notifications:
             return
         word = self.first_check and 'Unread' or 'New'
-        self.notification.props.summary = '%s mail' % (word)
-        body = self.notification.props.body or ''
-        body += '\nYou have %d %s mail%s at %s.' % \
-                (count, word.lower(), count == 1 and "" or "s", acc.props.email)
-        self.notification.props.body = body.lstrip()
-        self.notification.show()
+        if self.conf.props.notification_mode == 'count':
+            self.notification.props.summary = '%s mail' % (word)
+            body = self.notification.props.body or ''
+            body += '\nYou have %d %s mail%s at %s.' % \
+                    (len(mails), word.lower(), len(mails) == 1 and "" or "s", acc.props.email)
+            self.notification.props.body = body.lstrip()
+            self.notification.show()
+        else:
+            for author, title, summary in mails:
+                if len(title) > 25:
+                    title = title[:24] + '…'
+                n = pynotify.Notification(title, 'From {0}: {1}'.format(author, summary),
+                                          'notification-message-email')
+                n.show()
 
     def notify_error(self, acc):
         body = 'An error was encountered while trying to check %s. '\
