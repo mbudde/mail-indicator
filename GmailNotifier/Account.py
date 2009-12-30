@@ -92,6 +92,7 @@ class Account(indicate.Indicator):
         self._last_check = None
         self._req = None
         self._event_id = None
+        self._first_check = True
         self.update_request()
 
     def do_get_property(self, pspec):
@@ -165,7 +166,10 @@ class Account(indicate.Indicator):
         count = atom["feed"]["fullcount"]
         self.set_property('count', count)
         if new > 0:
-            self.alert()
+            if not self._first_check:
+                self.alert()
+            else:
+                self._first_check = False
             self.show()
             self.emit("new-mail", new)
         elif int(count) > 0:
