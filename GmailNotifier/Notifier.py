@@ -35,8 +35,7 @@ class Notifier(object):
         self.server.set_type("message.mail")
         desktop_file = get_desktop_file(self.DESKTOP_FILE_NAME)
         if not desktop_file:
-            raise Exception('Could not find desktop file `%s`' %
-                            self.DESKTOP_FILE_NAME)
+            raise Exception('Could not find desktop file `{0}`'.format(self.DESKTOP_FILE_NAME))
         self.server.set_desktop_file(desktop_file)
         self.server.connect("server-display", self._clicked)
         self.server.show()
@@ -54,7 +53,7 @@ class Notifier(object):
 
     def _setup_accounts(self):
         for acc in self.conf.get_accounts():
-            debug("Account: %s, enabled: %s" % (acc.props.email, acc.props.enabled))
+            debug('Account: {0}, enabled: {1}'.format(acc.props.email, acc.props.enabled))
             acc.connect('new-mail', self.notify_mail)
             acc.connect('auth-error', self.notify_error)
             acc.connect('notify::enabled', self._account_enabled_cb)
@@ -70,10 +69,12 @@ class Notifier(object):
             return
         word = self.first_check and 'Unread' or 'New'
         if self.conf.props.notification_mode == 'count':
-            self.notification.props.summary = '%s mail' % (word)
+            self.notification.props.summary = '{0} mail'.format(word)
             body = self.notification.props.body or ''
-            body += '\nYou have %d %s mail%s at %s.' % \
-                    (len(mails), word.lower(), len(mails) == 1 and "" or "s", acc.props.email)
+            body += '\nYou have {count} {word} mail{plur} at {acc}.'.format(
+                count=len(mails), word=word.lower(),
+                plur=len(mails) == 1 and '' or 's', acc=acc.props.email
+            )
             self.notification.props.body = body.lstrip()
             self.notification.show()
         else:
@@ -85,8 +86,8 @@ class Notifier(object):
                 n.show()
 
     def notify_error(self, acc):
-        body = 'An error was encountered while trying to check %s. '\
-               'Check email and password is correct.' % acc.props.email
+        body = 'An error was encountered while trying to check {0}. '\
+               'Check email and password is correct.'.format(acc.props.email)
         self.error_notification.props.body = body                                       
         self.error_notification.show()
 
@@ -99,13 +100,13 @@ class Notifier(object):
     def _account_clicked(self, acc):
         app = self.conf.props.mail_application
         if app == 'browser':
-            os.popen("gnome-open '%s' &" % getattr(acc, 'link', ''))
+            os.popen("gnome-open '{0}' &".format(getattr(acc, 'link', '')))
         elif app == 'custom':
             command = self.conf.props.custom_app_exec
             # Replace %U etc. with link
             if '%' in command:
                 pos = command.find('%')
-                command = command[:pos] + "'%s'" % getattr(acc, 'link', '') + command[pos+2:]
+                command = command[:pos] + "'{0}'".format(getattr(acc, 'link', '')) + command[pos+2:]
             os.popen(command + ' &')
         acc.lower()
 
@@ -114,7 +115,7 @@ class Notifier(object):
         self.first_check = False
 
     def _account_enabled_cb(self, acc, prop):
-        debug('account %s has been %s' % (acc._email, acc._enabled and 'enabled' or 'disabled'))
+        debug('account {0} has been {1}'.format(acc._email, acc._enabled and 'enabled' or 'disabled'))
         if acc.props.enabled:
             acc.start_check()
         else:

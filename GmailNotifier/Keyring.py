@@ -39,8 +39,8 @@ class Keyring(object):
         auth_token = gnomekeyring.item_create_sync(
             self.keyring,
             gnomekeyring.ITEM_GENERIC_SECRET,
-            "%s - %s" % (self.app_name, email),
-            dict(appname="%s - %s" % (self.app_name, self.app_desc), email=email),
+            '{0} - {1}'.format(self.app_name, email),
+            dict(appname='{0} - {1}'.format(self.app_name, self.app_desc), email=email),
             password,
             True)
         return auth_token

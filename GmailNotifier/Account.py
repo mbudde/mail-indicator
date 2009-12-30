@@ -108,9 +108,9 @@ class Account(indicate.Indicator):
 
     @debug_method
     def update_request(self):
-        auth_string = base64.encodestring('%s:%s' % (self.props.email, self.props.password))[:-1]
+        auth_string = base64.encodestring('{0}:{1}'.format(self.props.email, self.props.password))[:-1]
         self._req = urllib2.Request("https://mail.google.com/mail/feed/atom/")
-        self._req.add_header('Authorization', 'Basic %s' % auth_string)
+        self._req.add_header('Authorization', 'Basic ' + auth_string)
 
     def start_check(self, force=False):
         if self._event_id:
@@ -137,7 +137,7 @@ class Account(indicate.Indicator):
             debug('Account not enabled')
             return False
 
-        debug("Check for new mail on %s" % self._email)
+        debug("Check for new mail on {0}".format(self._email))
         atom = None
         try:
             atom = feedparser.parse(urllib2.urlopen(self._req).read())
@@ -157,7 +157,7 @@ class Account(indicate.Indicator):
             utctime = calendar.timegm(time.strptime(email["issued"], "%Y-%m-%dT%H:%M:%SZ"))
             if not self._last_check or utctime > self._last_check:
                 new_mails.append((email['author_detail']['name'], email['title'], email['summary']))
-        debug("%d new mails" % len(new_mails))
+        debug("{0} new mails".format(len(new_mails)))
         self._last_check = time.time()
         count = atom["feed"]["fullcount"]
         self.set_property('count', count)
@@ -174,7 +174,7 @@ class Account(indicate.Indicator):
             self.hide()
 
         self.link = atom["feed"]["links"][0]["href"] 
-        debug("Checking again in %d minutes" % self._interval)
+        debug("Checking again in {0} minutes".format(self._interval))
         return True
 
     def alert(self):

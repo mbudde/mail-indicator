@@ -42,14 +42,14 @@ def debug(str):
 def debug_fun(fun):
     def dbg_fun(*args, **kwargs):
         res = fun(*args, **kwargs)
-        print '%s ( %s %s ) -> %s' % (fun.__name__, args, kwargs, res)
+        print '{0} ( {1} {2} ) -> {3}'.format(fun.__name__, args, kwargs, res)
         return res
     return dbg_fun
 
 def debug_method(fun):
     def dbg_fun(klass, *args, **kwargs):
-        print '%s.%s ( %s %s )' % (klass.__class__, fun.__name__, args, kwargs)
+        print '{0}.{1} ( {2} {3} )'.format(klass.__class__, fun.__name__, args, kwargs)
         res = fun(klass, *args, **kwargs)
-        print '%s.%s -> %s' % (klass.__class__, fun.__name__, res)
+        print '{0}.{1} -> {2}'.format(klass.__class__, fun.__name__, res)
         return res
     return dbg_fun

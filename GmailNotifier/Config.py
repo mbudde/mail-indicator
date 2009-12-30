@@ -103,16 +103,16 @@ class Config(gobject.GObject):
     def do_set_property(self, pspec, value):
         if (pspec.name == 'notification-mode' and value not in ('count', 'email')) or \
            (pspec.name == 'mail-application' and value not in ('browser', 'custom', 'none')):
-            raise ValueError, 'invalid value `%s\' or property %s' % (value, pspec.name)
+            raise ValueError('invalid value `{0}\' for property {1}'.format(value, pspec.name))
         setattr(self, '_'+pspec.name, value)
-        self.gconf.set_value('%s/%s' % (self.path, pspec.name), value)
+        self.gconf.set_value('{0}/{1}'.format(self.path, pspec.name), value)
 
     def open_pref_window(self):
         PreferenceDialog.open(self)
 
     def get_accounts(self):
         if self._accounts == None:
-            paths = self.gconf.all_dirs('%s/accounts' % self.path)
+            paths = self.gconf.all_dirs('{0}/accounts'.format(self.path))
             self._accounts = []
             for path in paths:
                 self._init_account_from_gconf(path)
@@ -123,13 +123,13 @@ class Config(gobject.GObject):
         for acc in self._accounts:
             if acc.props.email == account.props.email:
                 return False
-        path = "%s/accounts/%s" % (self.path, account.props.email)
+        path = '{0}/accounts/{1}'.format(self.path, account.props.email)
         for pspec in account.props:
             if pspec.name == 'password':
                 auth_token = self.keyring.save_password(account.props.email, account.props.password)
-                self.gconf.set_int('%s/auth_token' % path, auth_token)
+                self.gconf.set_int('{0}/auth_token'.format(path), auth_token)
             else:
-                self.gconf.set_value('%s/%s' % (path, pspec.name),
+                self.gconf.set_value('{0}/{1}'.format(path, pspec.name),
                                      getattr(account.props, pspec.name))
         self._account_hid[account.props.email] = \
                 account.connect('notify', self._account_prop_changed)
@@ -137,8 +137,8 @@ class Config(gobject.GObject):
         return True
 
     def remove_account(self, account):
-        path = '%s/accounts/%s' % (self.path, account.props.email)
-        auth_token = self.gconf.get_int('%s/auth_token' % path)
+        path = '{0}/accounts/{1}'.format(self.path, account.props.email)
+        auth_token = self.gconf.get_int('{0}/auth_token'.format(path))
         self.keyring.remove_password(auth_token)
         self.gconf.recursive_unset(path, 1)
         self.gconf.suggest_sync()
@@ -150,7 +150,7 @@ class Config(gobject.GObject):
     def _init_properties_from_gconf(self):
         """Set Config properties from GConf."""
         for pspec in self.props:
-            path = '%s/%s' % (self.path, pspec.name)
+            path = '{0}/{1}'.format(self.path, pspec.name)
             try:
                 val = self.gconf.get_value(path)
             except ValueError:
@@ -160,15 +160,15 @@ class Config(gobject.GObject):
 
     def _init_account_from_gconf(self, path):
         """Setup an Account class with values from GConf."""
-        email = self.gconf.get_value('%s/email' % path)
+        email = self.gconf.get_value('{0}/email'.format(path))
         account = Account(email)
         for pspec in account.props:
             if pspec.name == 'password':
-                auth_token = self.gconf.get_value('%s/auth_token' % path)
+                auth_token = self.gconf.get_value('{0}/auth_token'.format(path))
                 account.props.password = self.keyring.get_password(auth_token)
             elif pspec.name != 'email':
                 setattr(account.props, pspec.name,
-                        self.gconf.get_value('%s/%s' % (path, pspec.name)))
+                        self.gconf.get_value('{0}/{1}'.format(path, pspec.name)))
         self._account_hid[account.props.email] = \
                 account.connect('notify', self._account_prop_changed)
         self._accounts.append(account)
@@ -177,12 +177,12 @@ class Config(gobject.GObject):
     @debug_method
     def _account_prop_changed(self, acc, pspec):
         """Called when an Account property is changed. Save the property to GConf. """
-        debug('prop changed in %s' % acc._email)
+        debug('prop changed in '+acc._email)
         if pspec.name == 'password':
             self.keyring.save_password(acc.props.email, acc.props.password)
         else:
             # Can't use get_property because of libindicate bug (LP#499490)
-            self.gconf.set_value('%s/accounts/%s/%s' % (self.path, acc.props.email, pspec.name),
+            self.gconf.set_value('{0}/accounts/{1}/{2}'.format(self.path, acc.props.email, pspec.name),
                                  getattr(acc.props, pspec.name))
                 
 
