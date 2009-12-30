@@ -202,8 +202,7 @@ class PreferenceDialog(object):
                     pass
         self.account_editor.hide()
 
-    def clear_password(self, w):
-        entry = self.ui.get_object('password')
+    def clear_password(self, entry, pos, event):
         entry.props.text = ''
         entry.grab_focus()
 
