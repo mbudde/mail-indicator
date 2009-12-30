@@ -34,14 +34,18 @@ class Notifier(object):
         self.server.connect("server-display", self._clicked)
         self.server.show()
         self.first_check = True
+
+        # Setup notifications
         pynotify.init("GmailNotifier")
-        self.notification = pynotify.Notification('Unread mail', '',
-                                                  'notification-message-email')
-        self.error_notification = pynotify.Notification('Unable to connect', '',
-                                                        'notification-message-email')
+        self.notification = \
+                pynotify.Notification('Unread mail', '', 'notification-message-email')
+        self.error_notification = \
+                pynotify.Notification('Unable to connect', '', 'notification-message-email')
         self.notification.connect('closed', self._clear_notification)
 
-    def start_mail_checks(self):
+        self._setup_accounts()
+
+    def _setup_accounts(self):
         for acc in self.conf.get_accounts():
             debug("Account: %s, enabled: %s" % (acc.props.email, acc.props.enabled))
             acc.connect('new-mail', self.notify_mail)

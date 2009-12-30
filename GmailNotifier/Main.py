@@ -23,7 +23,6 @@
 
 import gtk
 
-import Utils
 import info
 from Config import Config
 from Notifier import Notifier
@@ -33,7 +32,6 @@ GCONF_PATH = '/apps/' + info.APPNAME
 def main():
     conf = Config(GCONF_PATH)
     notifier = Notifier(conf)
-    notifier.start_mail_checks()
     try:
         gtk.main()
     except KeyboardInterrupt:
