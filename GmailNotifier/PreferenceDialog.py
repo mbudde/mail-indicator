@@ -42,13 +42,23 @@ class PreferenceDialog(object):
         self.ui = ui
         # TODO: path handling
         ui.add_from_file(Utils.get_data_file('gmail-notifier.ui'))
+        ui.connect_signals(self)
+
         self.window = ui.get_object('prefs_window')
         self.account_editor = ui.get_object('account_editor')
         self.account_store = ui.get_object('account_store')
         self.account_treeview = ui.get_object('account_treeview')
 
-        ui.connect_signals(self)
-        # Populate store
+        # Remove and edit buttons should be disabled when no account is
+        # selected
+        btns = self.get_widgets('edit_account', 'remove_account')
+        viewsel = self.account_treeview.get_selection()
+        def sel_changed(sel):
+            state = (sel.count_selected_rows() == 1)
+            for btn in btns: btn.props.sensitive = state
+        viewsel.connect('changed', sel_changed)
+
+        # Populate account store
         for acc in conf.get_accounts():
             iter = self.account_store.append((
                 acc.props.enabled,
@@ -63,6 +73,7 @@ class PreferenceDialog(object):
                            [('text/uri-list', 0, 1)],
                            gtk.gdk.ACTION_COPY)
 
+        # Load preferences from Config
         self.prop2widget_map = {
             'notifications': 'enable_notifications_globally',
             'run-on-startup': 'run_on_startup',
