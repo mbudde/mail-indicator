@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Gmail Notifier
+Comment=Get notifications for new mails in your Gmail accounts
+Icon=evolution
+Exec=gmail-notifier
+Terminal=false
+Type=Application
+Categories=GNOME;Utility;Monitor;

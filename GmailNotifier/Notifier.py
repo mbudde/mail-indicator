@@ -17,7 +17,7 @@
 import indicate
 import pynotify
 
-from Utils import debug
+from Utils import get_desktop_file, debug
 
 class Notifier(object):
     """Indicate server.
@@ -26,11 +26,17 @@ class Notifier(object):
     and enabling/disabling of accounts.
     """
 
+    DESKTOP_FILE_NAME = 'gmail-notifier.desktop'
+
     def __init__(self, conf):
         self.conf = conf
         self.server = indicate.indicate_server_ref_default()
         self.server.set_type("message.mail")
-        self.server.set_desktop_file("/usr/share/applications/gmail-notifier/gmail-notifier.desktop")
+        desktop_file = get_desktop_file(self.DESKTOP_FILE_NAME)
+        if not desktop_file:
+            raise Exception('Could not find desktop file `%s`' %
+                            self.DESKTOP_FILE_NAME)
+        self.server.set_desktop_file(desktop_file)
         self.server.connect("server-display", self._clicked)
         self.server.show()
         self.first_check = True

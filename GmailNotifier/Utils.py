@@ -26,6 +26,15 @@ def get_data_file(filename):
         if os.path.exists(path):
             return os.path.abspath(path)
     return None
+
+def get_desktop_file(filename):
+    path = os.path.join(os.path.dirname(__file__), '..', 'data', filename)
+    if os.path.exists(path):
+        return os.path.abspath(path)
+    path = os.path.join(os.path.dirname(__file__), '..', '..', 'applications', filename)
+    if os.path.exists(path):
+        return os.path.abspath(path)
+    return None
     
 def debug(str):
     print str

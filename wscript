@@ -25,3 +25,4 @@ def build(bld):
     bld.install_files('${PREFIX}/bin', 'gmail-notifier', chmod=0755)
     bld.install_files('${PREFIX}/share/gmail-notifier/GmailNotifier', 'GmailNotifier/*.py')
     bld.install_files('${PREFIX}/share/gmail-notifier/data', 'data/*.ui')
+    bld.install_files('${PREFIX}/share/applications', 'data/*.desktop')
