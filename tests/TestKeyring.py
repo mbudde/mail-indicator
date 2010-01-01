@@ -1,11 +1,12 @@
 
-import unittest
 import gtk
 import gnomekeyring
+
+import Shared
 from GmailNotifier.Keyring import Keyring
 
 
-class TestKeyring(unittest.TestCase):
+class TestKeyring(Shared.TestCase):
 
     def setUp(self):
         self.keyring = Keyring('Gmail Notifier Test', 'Test')
@@ -33,4 +34,4 @@ class TestKeyring(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    Shared.main()

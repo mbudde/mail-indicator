@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
+import subprocess
+import glob
+
 from GmailNotifier.info import *
 
 srcdir = '.'
@@ -26,3 +29,6 @@ def build(bld):
     bld.install_files('${PREFIX}/share/gmail-notifier/GmailNotifier', 'GmailNotifier/*.py')
     bld.install_files('${PREFIX}/share/gmail-notifier/data', 'data/*.ui')
     bld.install_files('${PREFIX}/share/applications', 'data/*.desktop')
+
+def test(ctx):
+    subprocess.call(['python', 'tests/TestAll.py'])

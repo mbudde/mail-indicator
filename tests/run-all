@@ -1,5 +1,0 @@
-#!/bin/sh
-
-for test in *.py; do
-PYTHONPATH=..:$PYTHONPATH python $test
-done

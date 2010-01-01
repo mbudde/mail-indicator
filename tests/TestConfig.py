@@ -1,12 +1,13 @@
 
-import unittest
 import gtk
 import gconf
+
+import Shared
 from GmailNotifier.Config import Config
 
 GCONF_PATH = '/apps/gmail-notifier-test'
 
-class TestKeyring(unittest.TestCase):
+class TestConfig(Shared.TestCase):
 
     props = (
         ('notifications', True),
@@ -40,4 +41,4 @@ class TestKeyring(unittest.TestCase):
         self.gconf.suggest_sync()
 
 if __name__ == '__main__':
-    unittest.main()
+    Shared.main()
