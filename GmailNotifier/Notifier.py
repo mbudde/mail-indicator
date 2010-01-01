@@ -17,6 +17,7 @@
 
 import indicate
 import pynotify
+import subprocess
 
 from Utils import get_desktop_file, debug
 
@@ -100,14 +101,14 @@ class Notifier(object):
     def _account_clicked(self, acc):
         app = self.conf.props.mail_application
         if app == 'browser':
-            os.popen("gnome-open '{0}' &".format(getattr(acc, 'link', '')))
+            subprocess.Popen(['gnome-open', getattr(acc, 'link', '')])
         elif app == 'custom':
-            command = self.conf.props.custom_app_exec
+            command = self.conf.props.custom_app_exec.split()
             # Replace %U etc. with link
-            if '%' in command:
-                pos = command.find('%')
-                command = command[:pos] + "'{0}'".format(getattr(acc, 'link', '')) + command[pos+2:]
-            os.popen(command + ' &')
+            for i, arg in enumerate(command):
+                if arg.startswith('%'):
+                    command[i] = getattr(acc, 'link', '')
+            subprocess.Popen(command)
         acc.lower()
 
     def _clear_notification(self, n):
