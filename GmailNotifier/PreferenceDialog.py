@@ -16,6 +16,7 @@
 
 import gtk
 import gio
+import glib
 
 import Utils
 import info
