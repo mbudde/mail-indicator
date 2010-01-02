@@ -19,7 +19,8 @@ import indicate
 import pynotify
 import subprocess
 
-from Utils import get_desktop_file, debug
+from Utils import get_desktop_file
+from Debug import debug
 
 class Notifier(object):
     """Indicate server.

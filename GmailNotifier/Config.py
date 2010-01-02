@@ -21,7 +21,7 @@ import info
 from Account import Account
 from Keyring import Keyring
 from PreferenceDialog import PreferenceDialog
-from Utils import debug, debug_method
+from Debug import debug
 
 
 class Config(gobject.GObject):
@@ -92,14 +92,12 @@ class Config(gobject.GObject):
         self._accounts = None
         self._account_hid = {}
 
-    @debug_method
     def do_get_property(self, pspec):
         try:
             return getattr(self, '_'+pspec.name)
         except AttributeError:
             return pspec.default_value
 
-    @debug_method
     def do_set_property(self, pspec, value):
         if (pspec.name == 'notification-mode' and value not in ('count', 'email')) or \
            (pspec.name == 'mail-application' and value not in ('browser', 'custom', 'none')):
@@ -118,7 +116,6 @@ class Config(gobject.GObject):
                 self._init_account_from_gconf(path)
         return self._accounts
 
-    @debug_method
     def save_account(self, account):
         for acc in self._accounts:
             if acc.props.email == account.props.email:
@@ -174,7 +171,6 @@ class Config(gobject.GObject):
         self._accounts.append(account)
         return account
 
-    @debug_method
     def _account_prop_changed(self, acc, pspec):
         """Called when an Account property is changed. Save the property to GConf. """
         debug('prop changed in '+acc._email)

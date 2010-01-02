@@ -14,24 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
+from functools import wraps
+    
+def debug(str):
+    print(str)
 
-import info
+def debugfun(fun):
+    @wraps(fun)
+    def wrapper(*args, **kwargs):
+        res = fun(*args, **kwargs)
+        debug('{0} ( {1} {2} ) -> {3}'.format(fun.__name__, args, kwargs, res))
+        return res
+    return wrapper
 
-def get_data_file(filename):
-    path = os.path.join(os.path.dirname(__file__), '..', 'data')
-    if os.path.exists(path):
-        path = os.path.join(path, filename)
-        if os.path.exists(path):
-            return os.path.abspath(path)
-    return None
-
-def get_desktop_file(filename):
-    path = os.path.join(os.path.dirname(__file__), '..', 'data', filename)
-    if os.path.exists(path):
-        return os.path.abspath(path)
-    path = os.path.join(os.path.dirname(__file__), '..', '..', 'applications', filename)
-    if os.path.exists(path):
-        return os.path.abspath(path)
-    return None
+def debugmethod(fun):
+    @wraps(fun)
+    def wrapper(klass, *args, **kwargs):
+        debug('{0}.{1} ( {2} {3} )'.format(klass.__class__, fun.__name__, args, kwargs))
+        res = fun(klass, *args, **kwargs)
+        debug('{0}.{1} -> {2}'.format(klass.__class__, fun.__name__, res))
+        return res
+    return wrapper

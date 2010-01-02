@@ -24,7 +24,7 @@ import calendar
 import indicate
 import feedparser
 
-from Utils import debug, debug_method
+from Debug import debug
 
 class Account(indicate.Indicator):
     """Account inbox indicator showing in the MessageingMenu.
@@ -97,7 +97,6 @@ class Account(indicate.Indicator):
         except AttributeError:
             return pspec.default_value
 
-    @debug_method
     def do_set_property(self, pspec, value):
         setattr(self, '_'+pspec.name, value)
         if pspec.name in ('password', 'email'):
@@ -106,7 +105,6 @@ class Account(indicate.Indicator):
             if self._event_id:
                 self.start_check(force=True)
 
-    @debug_method
     def update_request(self):
         auth_string = base64.encodestring('{0}:{1}'.format(self.props.email, self.props.password))[:-1]
         self._req = urllib2.Request('https://mail.google.com/mail/feed/atom/')
@@ -125,7 +123,6 @@ class Account(indicate.Indicator):
         if self._event_id:
             gobject.source_remove(self._event_id)
 
-    @debug_method
     def check_mail(self):
         """Check for new mail on the account if it is enabled.
         

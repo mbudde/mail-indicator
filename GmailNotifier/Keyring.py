@@ -16,7 +16,6 @@
 
 import gnomekeyring
 
-from Utils import debug_method
 
 class Keyring(object):
     """Interface between Config and Gnome Keyring."""
