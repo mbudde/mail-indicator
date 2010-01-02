@@ -18,6 +18,7 @@
 import indicate
 import pynotify
 import subprocess
+import gobject
 
 from Utils import get_desktop_file
 from Debug import debug
@@ -60,11 +61,15 @@ class Notifier(object):
             acc.connect('auth-error', self.notify_error)
             acc.connect('notify::enabled', self._account_enabled_cb)
             acc.connect('user-display', self._account_clicked)
-            if acc.props.enabled:
-                acc.show()
+            if not acc.props.enabled:
+                continue
+            acc.show()
+            def start_check():
                 acc.start_check()
-                # TODO: Make non-blocking
                 acc.check_mail()
+                return False
+            gobject.timeout_add_seconds(30, start_check)
+
 
     def notify_mail(self, acc, mails):
         if not acc.props.notifications:
