@@ -149,6 +149,7 @@ class Config(gobject.GObject):
         for pspec in self.props:
             path = '{0}/{1}'.format(self.path, pspec.name)
             try:
+                # TODO: Verify value is correct type
                 val = self.gconf.get_value(path)
             except ValueError:
                 val = pspec.default_value
