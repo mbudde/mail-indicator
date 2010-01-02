@@ -26,10 +26,13 @@ import gtk
 import info
 from Config import Config
 from Notifier import Notifier
+import Debug
 
 GCONF_PATH = '/apps/' + info.APPNAME
 
-def main():
+def main(debug=False):
+    if debug:
+        Debug.DEBUGGING = True
     conf = Config(GCONF_PATH)
     notifier = Notifier(conf)
     try:

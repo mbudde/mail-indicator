@@ -14,24 +14,45 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import inspect
 from functools import wraps
+
+"""Is debugging enabled?"""
+DEBUGGING = False
     
 def debug(str):
-    print(str)
+    global DEBUGGING
+    if not DEBUGGING: return
+    s = inspect.stack()[1]
+    print '{file}:{line}:{func}: {msg}'.format(
+        file=os.path.basename(s[1]),
+        line=s[2],
+        func=s[3],
+        msg=str)
 
 def debugfun(fun):
+    global DEBUGGING
+    if not DEBUGGING: return fun
     @wraps(fun)
     def wrapper(*args, **kwargs):
         res = fun(*args, **kwargs)
-        debug('{0} ( {1} {2} ) -> {3}'.format(fun.__name__, args, kwargs, res))
+        print('{0} ( {1} {2} ) -> {3}'.format(fun.__name__, args, kwargs, res))
         return res
     return wrapper
 
 def debugmethod(fun):
     @wraps(fun)
     def wrapper(klass, *args, **kwargs):
-        debug('{0}.{1} ( {2} {3} )'.format(klass.__class__, fun.__name__, args, kwargs))
-        res = fun(klass, *args, **kwargs)
-        debug('{0}.{1} -> {2}'.format(klass.__class__, fun.__name__, res))
-        return res
+        info = {
+            'file': os.path.basename(inspect.stack()[1][1])[:-3],
+            'cls': klass.__class__.__name__,
+            'fun': fun.__name__,
+            'args': args,
+            'kwargs': kwargs
+        }
+        print('{file}.{cls}.{fun} <-- {args} {kwargs}'.format(**info))
+        info.update({'res': fun(klass, *args, **kwargs)})
+        print('{file}.{cls}.{fun} --> {res}'.format(**info))
+        return info['res']
     return wrapper
