@@ -14,7 +14,7 @@
   </object>
   <object class="GtkWindow" id="prefs_window">
     <property name="border_width">12</property>
-    <property name="title" translatable="yes">Gmail Notifier</property>
+    <property name="title" translatable="yes">Mail Indicator</property>
     <property name="window_position">center</property>
     <child>
       <object class="GtkVBox" id="vbox1">
@@ -330,7 +330,7 @@
                 <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkCheckButton" id="run_on_startup">
-                    <property name="label" translatable="yes">Run Gmail Notifier on startup</property>
+                    <property name="label" translatable="yes">Run Mail Indicator on startup</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>

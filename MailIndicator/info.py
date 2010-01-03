@@ -14,14 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-APPNAME      = 'gmail-notifier'
-NAME         = 'Gmail Notifier'
-VERSION      = '2.0-alpha'
+APPNAME      = 'mail-indicator'
+NAME         = 'Mail Indicator'
+VERSION      = '1.0-alpha'
 DESCRIPTION  = ''
 WEBSITE      = ''
 AUTHORS = [
     'Michael Budde <mbudde@gmail.com>',
-    'Michael Tom-Wing <mtomwing@gmail.com>',
 ]
 LICENSE      = 'GPLv3+'
 LICENSE_TEXT = """

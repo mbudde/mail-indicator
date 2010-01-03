@@ -30,7 +30,7 @@ class Notifier(object):
     and enabling/disabling of accounts.
     """
 
-    DESKTOP_FILE_NAME = 'gmail-notifier.desktop'
+    DESKTOP_FILE_NAME = 'mail-indicator.desktop'
 
     def __init__(self, conf, initial_check):
         self.conf = conf
@@ -46,7 +46,7 @@ class Notifier(object):
         self.first_check = True
 
         # Setup notifications
-        pynotify.init('GmailNotifier')
+        pynotify.init('MailIndicator')
         self.notification = \
                 pynotify.Notification('Unread mail', '', 'notification-message-email')
         self.error_notification = \

@@ -1,6 +1,6 @@
 
 import Shared
-from GmailNotifier.MailApplication import *
+from MailIndicator.MailApplication import *
 
 
 class TestMailApp(Shared.TestCase):

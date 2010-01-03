@@ -3,7 +3,7 @@ import gtk
 import gnomekeyring
 
 import Shared
-from GmailNotifier.Keyring import Keyring
+from MailIndicator.Keyring import Keyring
 
 
 class TestKeyring(Shared.TestCase):

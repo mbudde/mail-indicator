@@ -3,9 +3,9 @@ import gtk
 import gconf
 
 import Shared
-from GmailNotifier.Config import Config
+from MailIndicator.Config import Config
 
-GCONF_PATH = '/apps/gmail-notifier-test'
+GCONF_PATH = '/apps/mail-indicator-test'
 
 class TestConfig(Shared.TestCase):
 

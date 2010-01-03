@@ -42,7 +42,7 @@ class PreferenceDialog(object):
         ui = gtk.Builder()
         self.ui = ui
         # TODO: path handling
-        ui.add_from_file(Utils.get_data_file('gmail-notifier.ui'))
+        ui.add_from_file(Utils.get_data_file('mail-indicator.ui'))
         ui.connect_signals(self)
 
         self.window = ui.get_object('prefs_window')

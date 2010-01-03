@@ -4,7 +4,7 @@
 import subprocess
 import glob
 
-from GmailNotifier.info import *
+from MailIndicator.info import *
 
 srcdir = '.'
 blddir = 'build'
@@ -24,16 +24,15 @@ def configure(conf):
 def build(bld):
     obj = bld.new_task_gen(
             features='py',
-            install_path='${PREFIX}/share/gmail-notifier/GmailNotifier')
-    obj.find_sources_in_dirs('GmailNotifier', exts=['.py'])
+            install_path='${PREFIX}/share/mail-indicator/MailIndicator')
+    obj.find_sources_in_dirs('MailIndicator', exts=['.py'])
 
     # Retrive destdir option from env
     import Options
     Options.options.destdir = bld.env['destdir']
 
-    bld.install_files('${PREFIX}/bin', 'gmail-notifier', chmod=0755)
-    #bld.install_files('${PREFIX}/share/gmail-notifier/GmailNotifier', 'GmailNotifier/*.py')
-    bld.install_files('${PREFIX}/share/gmail-notifier/data', 'data/*.ui')
+    bld.install_files('${PREFIX}/bin', 'mail-indicator', chmod=0755)
+    bld.install_files('${PREFIX}/share/mail-indicator/data', 'data/*.ui')
     bld.install_files('${PREFIX}/share/applications', 'data/*.desktop')
 
 def test(ctx):

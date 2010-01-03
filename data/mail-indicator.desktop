@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Mail Indicator
+Comment=Get notifications for new mails in your mail accounts
+Icon=evolution
+Exec=mail-indicator
+Terminal=false
+Type=Application
+Categories=GNOME;Utility;Monitor;

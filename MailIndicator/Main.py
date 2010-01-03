@@ -1,12 +1,6 @@
-#!/usr/bin/env python
+# encoding: utf-8
 #
-# Name: Gmail Notifier
-# Version: 1.5.2
-# Copyright (C) 2009 Michael Tom-Wing, Michael Budde
-# Author: Michael Tom-Wing <mtomwing@gmail.com>,
-#         Michael Budde <mbudde@gmail.com>
-# Date: November 29th, 2009
-# URL: http://ahadiel.org/projects/gmail-notifier
+# Copyright (C) 2009  Michael Budde <mbudde@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
