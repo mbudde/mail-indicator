@@ -18,6 +18,7 @@ def set_options(opt):
 
 def configure(conf):
     conf.check_tool('python')
+    conf.check_python_version((2,6,0))
     # Save destdir option to env
     import Options, Utils, os.path
     conf.env['destdir'] = os.path.expanduser(Options.options.destdir)
