@@ -6,7 +6,7 @@ import sys
 try:
     import MailIndicator.Main
 except ImportError:
-    path = os.path.join(os.path.dirname(__file__), '..', 'share', 'gmail-notifier')
+    path = os.path.join(os.path.dirname(__file__), '..', 'share', 'mail-indicator')
     sys.path.insert(0, path)
     import MailIndicator.Main
 
