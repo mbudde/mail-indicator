@@ -2,7 +2,6 @@
 
 import os
 import sys
-import optparse
 
 try:
     import GmailNotifier.Main
@@ -12,7 +11,4 @@ except ImportError:
     import GmailNotifier.Main
 
 if __name__ == '__main__':
-    parser = optparse.OptionParser()
-    parser.add_option('-d', '--debug', action='store_true', default=False)
-    (options, args) = parser.parse_args()
-    GmailNotifier.Main.main(debug=options.debug)
+    GmailNotifier.Main.main()

@@ -22,6 +22,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gtk
+import optparse
 
 import info
 from Config import Config
@@ -30,11 +31,18 @@ import Debug
 
 GCONF_PATH = '/apps/' + info.APPNAME
 
-def main(debug=False):
-    if debug:
+def main():
+    import optparse
+    parser = optparse.OptionParser(version=info.VERSION)
+    parser.add_option('-d', '--debug', action='store_true', default=False)
+    parser.add_option('-i', '--inital-check', action='store', dest='initial_check',
+                      type='int', default=30, metavar='N',
+                      help='number of seconds before initial check is performed',)
+    (options, args) = parser.parse_args()
+    if options.debug:
         Debug.DEBUGGING = True
     conf = Config(GCONF_PATH)
-    notifier = Notifier(conf)
+    notifier = Notifier(conf, options.initial_check)
     try:
         gtk.main()
     except KeyboardInterrupt:

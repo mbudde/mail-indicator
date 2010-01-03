@@ -32,8 +32,9 @@ class Notifier(object):
 
     DESKTOP_FILE_NAME = 'gmail-notifier.desktop'
 
-    def __init__(self, conf):
+    def __init__(self, conf, initial_check):
         self.conf = conf
+        self._initial_check = initial_check
         self.server = indicate.indicate_server_ref_default()
         self.server.set_type('message.mail')
         desktop_file = get_desktop_file(self.DESKTOP_FILE_NAME)
@@ -68,8 +69,7 @@ class Notifier(object):
                 acc.start_check()
                 acc.check_mail()
                 return False
-            gobject.timeout_add_seconds(30, start_check)
-
+            gobject.timeout_add_seconds(self._initial_check, start_check)
 
     def notify_mail(self, acc, mails):
         if not acc.props.notifications:
