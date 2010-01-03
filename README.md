@@ -14,7 +14,9 @@ Tom-Wing <mtomwing@gmail.com>.
 
  - Python 2.6
  - PyGTK
+ - PyGObject
  - python-feedparser
+ - python-gconf
  - python-gnomekeyring
  - python-indicate
  - python-notify
