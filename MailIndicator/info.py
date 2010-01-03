@@ -1,7 +1,7 @@
 
 APPNAME      = 'mail-indicator'
 NAME         = 'Mail Indicator'
-VERSION      = '0.3'
+VERSION      = '0.4'
 DESCRIPTION  = 'Get notifications for new mails in your mail accounts'
 WEBSITE      = 'http://launchpad.net/mail-indicator'
 AUTHORS = [
