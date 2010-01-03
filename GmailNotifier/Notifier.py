@@ -86,8 +86,8 @@ class Notifier(object):
             self.notification.show()
         else:
             for author, title, summary in mails:
-                if len(title) > 25:
-                    title = title[:24] + '…'
+                if len(title) > 30:
+                    title = title[:29] + '…'
                 n = pynotify.Notification(title, 'From {0}: {1}'.format(author, summary),
                                           'notification-message-email')
                 n.show()
