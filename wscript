@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
+import os
 import subprocess
 import glob
 
@@ -37,3 +38,9 @@ def build(bld):
 
 def test(ctx):
     subprocess.call(['python', 'tests/TestAll.py'])
+
+def glade(ctx):
+    with open(os.devnull) as devnull:
+        cmd = ['glade']
+        cmd.extend(glob.glob('data/*.ui'))
+        subprocess.Popen(cmd, stdout=devnull, stderr=subprocess.STDOUT)
