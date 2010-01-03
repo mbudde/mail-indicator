@@ -1,0 +1,22 @@
+Source: mail-indicator
+Section: mail
+Priority: extra
+Maintainer: Michael Budde <mbudde@gmail.com>
+Build-Depends: debhelper (>= 7),
+               python2.6,
+               python-support
+Standards-Version: 3.8.1
+Homepage: http://launchpad.net/mail-indicator
+
+Package: mail-indicator
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends},
+         python-feedparser,
+         python-gconf,
+         python-gnomekeyring,
+         python-gobject,
+         python-gtk2,
+         python-indicate,
+         python-notify
+Description: Mail notifier for MessagingMenu
+ Notifies of new mails in your email accounts.
