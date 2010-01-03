@@ -14,10 +14,10 @@ Tom-Wing <mtomwing@gmail.com>.
 
  - Python 2.6
  - PyGTK
+ - python-feedparser
+ - python-gnomekeyring
  - python-indicate
  - python-notify
- - python-feedreader
- - python-gnomekeyring
 
 Note: Package names may differ in your distribution.
 
