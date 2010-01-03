@@ -331,7 +331,6 @@
                 <child>
                   <object class="GtkCheckButton" id="run_on_startup">
                     <property name="label" translatable="yes">Run Mail Indicator on startup</property>
-                    <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
                     <property name="draw_indicator">True</property>
